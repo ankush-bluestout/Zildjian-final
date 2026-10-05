@@ -1,0 +1,593 @@
+
+{% comment %}
+  Artist Form — plain HTML version (no React).
+  Edit the markup below directly like normal HTML.
+
+  Behaviour is added by assets/artist-form.js. It hooks onto these attributes,
+  so keep them when editing:
+    - id="artist-form-root"      (the mount wrapper + data-* config)
+    - id="artist-form"           (the <form>)
+    - class="sidebar-link" / "mobile-tab" with href="#sX"   (nav)
+    - id="s1".."s8"              (section anchors, must match the nav hrefs)
+    - name="..."                 (every field you want submitted)
+    - class="product-search" data-group="gotos"            (Go-To's picker)
+    - class="cymbal-picker" data-group="cymbals"           (Cymbal checklist)
+    - class="upload-box" data-upload="profilePhoto|setupPhoto"  (photo pickers)
+    - class="quote-count"        (character counter text)
+    - [data-alert]               (success/error message target)
+    - class="submit-btn"         (submit button)
+{% endcomment %}
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet"> 
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+{{ 'artist-form.css' | asset_url | stylesheet_tag }}
+
+<style>
+  /* ---- Cymbal picker (browse checklist + selected chips) ---- */
+  .cymbal-picker {    border-radius: 2px;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #E3D0A6;    
+}     
+  .cymbal-picker .cp-search { 
+        display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid #E3D0A6;
+  }
+  .cymbal-picker .cp-input { 
+      flex: 1;
+    border: 0;
+    background: #F8F8F9;
+    outline: none;
+    color: #5C5D60;
+    padding: 12px 16px;
+    font-family: Century Gothic !important;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 22px;
+    letter-spacing: 0px;
+        box-shadow: unset;    
+   }
+  .cymbal-picker .cp-input::placeholder { color: #5C5D60; }
+  .cymbal-picker .cp-list { 
+      max-height: 250px;
+    overflow-y: auto;
+    background: #F8F8F9;
+        scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+}   
+
+.cymbal-picker .cp-list::-webkit-scrollbar {
+    display: none; /* Chrome, Safari */
+}   
+  .cymbal-picker .cp-row { display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 14px;
+    cursor: pointer;
+    margin: 0;
+  }     
+  .cymbal-picker .cp-row:hover { background: #fafafa; }
+  .cymbal-picker .cp-row.selected { background: #FBF3DC; }
+
+
+.cymbal-picker .cp-check {
+    width: 16px;
+    height: 16px;
+    flex: none;
+    cursor: pointer;  
+    margin: 0;
+
+    appearance: none;
+    -webkit-appearance: none;
+
+    background: #fff;     
+    border: 1px solid #777;
+    border-radius: 2.5px;
+    box-sizing: border-box;
+}
+
+.cymbal-picker .cp-check:checked {
+    background: #B8860B;
+    border-color: #B8860B;
+}
+
+.cymbal-picker .cp-thumb {
+ width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #F5F4F0;
+    flex: none;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #E8E6E0;
+}
+  .cymbal-picker .cp-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .cymbal-picker .cp-info { min-width: 0; }
+  .cymbal-picker .cp-title { 
+  color: #000000;
+    font-family: Century Gothic;
+    font-weight: 400;
+    font-size: 13px;
+    line-height: 22px;
+    letter-spacing: 1px;
+}
+  .cymbal-picker .cp-sub { 
+      color: #666666;
+    margin-top: 2px;
+    font-family: Montserrat;
+    font-weight: 400;
+    font-size: 12px;
+    line-height: 100%;
+    letter-spacing: 0px;
+
+  }
+  .cymbal-picker .cp-empty { padding: 26px 16px; text-align: center; color: #aaa; font-size: 13px; }
+  .cymbal-picker .cp-footer { 
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    border-top: 1px solid #E3D0A6;
+    background: #FFFFFF;
+    gap: 5px;
+        font-family: Montserrat;
+    font-weight: 400;
+    font-size: 12px;
+    line-height: 100%;
+    letter-spacing: 0px;
+    color: #666666;
+  } 
+      .cymbal-picker .cp-filter strong { color: #222; }
+  .cymbal-picker .cp-clear { color: #B8860B; text-decoration: none; }
+  .cymbal-picker .cp-clear:hover { text-decoration: underline; }
+
+  .cp-selected { 
+        display: flex;
+    align-items: center;
+    padding: 12px;
+    background: #F8F8F9;
+    font-weight: 400; 
+    font-size: 12px;
+    line-height: 100%;
+    letter-spacing: 0px;
+    gap: 6px;
+    flex-wrap: wrap;  
+  }
+  .cp-chip { 
+        display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 9px;
+    border: 1px solid #d9b45b;
+    background: #FBF3DC;
+    font-family: Montserrat;
+    font-weight: 400;
+    font-size: 12px;
+    line-height: 100%;
+    letter-spacing: 0px;
+    }
+  .cp-chip-title { color: #222; font-weight: 500; }
+  .cp-chip-sub { color: #999; font-size: 12px; }
+  .cp-chip-x {
+  cursor: pointer;
+    color: #C8A951;
+    padding-left: 2px;
+    font-family: Barlow;
+    font-weight: 500;
+    font-size: 13px;
+    line-height: 13px;
+    letter-spacing: 0%;
+    vertical-align: middle;
+      }
+  .cp-chip-x:hover { color: #b8860b; }
+</style>
+
+<div id="artist-form-root"
+     data-proxy-url="{{ block.settings.proxy_url | default: '/apps/artist-form/submit' }}"
+     data-search-url="{{ block.settings.search_url | default: '/apps/artist-form/search' }}">
+
+  <!-- Mobile tab bar -->
+  <nav class="mobile-tabs">
+    <a href="#s1" class="mobile-tab active"><span class="tab-num">01</span><span class="tab-label">Info</span></a>
+    <a href="#s2" class="mobile-tab"><span class="tab-num">02</span><span class="tab-label">Quote</span></a>
+    <a href="#s3" class="mobile-tab"><span class="tab-num">03</span><span class="tab-label">Setup</span></a>
+    <a href="#s4" class="mobile-tab"><span class="tab-num">04</span><span class="tab-label">Go-To's</span></a>
+    <a href="#s5" class="mobile-tab"><span class="tab-num">05</span><span class="tab-label">Social</span></a>
+    <a href="#s6" class="mobile-tab"><span class="tab-num">06</span><span class="tab-label">Profile</span></a>
+    <a href="#s7" class="mobile-tab"><span class="tab-num">07</span><span class="tab-label">Setup Photo</span></a>
+    <a href="#s8" class="mobile-tab"><span class="tab-num">08</span><span class="tab-label">Videos</span></a>
+  </nav>
+
+  <div class="layout">
+
+    <!-- Sidebar nav -->
+    <aside class="sidebar">
+      <div class="sidebar-group-label">Artist Info</div>
+      <a href="#s1" class="sidebar-link active"><strong>01</strong>Artist Info<span class="plus"></span></a>
+      <a href="#s2" class="sidebar-link"><strong>02</strong>Your Quote<span class="plus"></span></a>
+
+      <div class="sidebar-group-label">Setup</div>
+      <a href="#s3" class="sidebar-link"><strong>03</strong>Cymbal Setup<span class="plus"></span></a>
+      <a href="#s4" class="sidebar-link"><strong>04</strong>Go-To's<span class="plus"></span></a>
+
+      <div class="sidebar-group-label">Online</div>
+      <a href="#s5" class="sidebar-link"><strong>05</strong>Website &amp; Socials<span class="plus"></span></a>
+
+      <div class="sidebar-group-label">Media</div>
+      <a href="#s6" class="sidebar-link"><strong>06</strong>Profile Photo<span class="plus"></span></a>
+      <a href="#s7" class="sidebar-link"><strong>07</strong>Setup Photo<span class="plus"></span></a>
+      <a href="#s8" class="sidebar-link"><strong>08</strong>Videos<span class="plus"></span></a>
+    </aside>
+
+    <main class="main">
+      <form id="artist-form" novalidate>
+
+        <!-- 01 Artist Information -->
+        <section id="s1">    
+          <div class="section-heading"><span>01</span>Artist Information</div>
+
+             <div class="field-row-wrap">
+            <div class="field-group">
+              <label class="field-label">Name <span class="req">★</span></label>
+              <div class="field-hint">Artist name you prefer on site.</div>
+              <input class="field-input" name="name" type="text" placeholder="e.g. Mimmo Di Cicco" required>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Band / Affiliation <span class="req">★</span></label>
+              <div class="field-hint">Who are you currently playing with?</div>
+              <input class="field-input" name="band" type="text" placeholder="e.g. Independent" required>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label">Artist Type <span class="req">★</span></label>
+              <select class="field-input" name="artistType" required>
+                <option value="">Sele an option...</option>
+                <option>Professional</option>
+                <option>Semi-Professional</option>
+                <option>Hobbyist</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Are you an Educator or Performer? <span class="req">★</span></label>
+              <select class="field-input" name="role" required>
+                <option value="">Select an option...</option>
+                <option>Educator</option>
+                <option>Performer</option>
+                <option>Both</option>
+              </select>
+            </div>
+
+          <div class="field-group full-field-group">
+            <label class="field-label">Country <span class="req">★</span></label>
+       <select class="field-input" name="country" data-searchable="true" required>
+  <option value="">Select your country...</option>
+  <option>United States</option>
+  <option>United Kingdom</option>
+  <option>Canada</option>
+  <option>Australia</option>
+  <option>Germany</option>
+  <option>France</option>
+  <option>Japan</option>
+</select>
+               </div>
+          </div>
+        </section>
+
+        <!-- 02 Quote -->
+        <section id="s2">
+          <div class="section-heading"><span>02</span>Your Zildjian Quote</div>
+          <div class="field-group">
+            <label class="field-label">Why do you choose Zildjian? <span class="req">★</span></label>
+            <div class="field-hint">This is the quote that will appear on your artist page. Please read it carefully.</div>
+            <div class="field-input-wrapper">
+            <textarea class="field-input" name="quote" placeholder="Share what Zildjian means to you, in your own words..." rows="6" maxlength="400" style="resize:vertical;line-height:1.5" required></textarea>
+            <div class="quote-count">0 / 400</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 03 Cymbal Setup (browse checklist) -->
+        <section id="s3">
+          <div class="section-heading"><span>03</span>Cymbal Setup</div>
+          <div class="field-group">
+            <label class="field-label">What's in Your Setup? <span class="req">★</span></label>
+            <div class="field-hint">Select the cymbals in your setup from left to right.</div>
+
+         
+               <div class="cymbal-picker" data-group="cymbals" data-mode="browse">
+              <div class="cp-search">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 14 14" fill="none">
+                  <path d="M6.41667 11.0833C8.994 11.0833 11.0833 8.994 11.0833 6.41667C11.0833 3.83934 8.994 1.75 6.41667 1.75C3.83934 1.75 1.75 3.83934 1.75 6.41667C1.75 8.994 3.83934 11.0833 6.41667 11.0833Z" stroke="#000000" stroke-width="1.16667"/>
+                  <path d="M12.2499 12.25L9.7124 9.71252" stroke="#000000" stroke-width="1.16667"/>
+                </svg>
+                <input type="text" class="cp-input" placeholder="Search cymbals by name...">
+              </div>
+              <div class="cp-list"></div>
+              <div class="cp-footer">
+                <span class="cp-filter">Filter: <strong>Cymbals only</strong></span>
+                <span class="cp-actions"><span class="cp-count">0 selected</span> · <a class="cp-clear" href="#">Clear all</a></span>
+              </div>
+              <div class="cp-selected" hidden></div>
+            </div>
+
+            <!-- selected chips strip -->
+            
+     <!-- manual cymbal entry -->
+            <div class="manual-cymbals" style="">
+              <label class="field-label manual-label">Can't find a cymbal? Add it manually</label>
+              <div class="field-hint">One cymbal per line — include the size and model (e.g. 22" K Custom Special Dry Ride).</div>
+              <textarea class="field-input manual-input" name="cymbalsManual" rows="4"
+                placeholder="22&quot; K Custom Special Dry Hi-Hats&#10;16&quot; K Custom Special Dry Hi-Hats"></textarea>
+              <div class="manual-hint"><strong>One cymbal per line</strong></div>
+            </div>
+
+          </div>    
+        </section>
+
+        {% comment %} <!-- 04 Go-To's (live product search) -->
+        <section id="s4" >
+          <div class="section-heading"><span>04</span>Go-To's</div>
+          <div class="field-group">
+            <label class="field-label">What are your Go-To's?</label>
+            <div class="field-hint">Search all Zildjian products — must-have cymbals, sticks, apparel, bags, etc.</div>
+
+            <div class="product-search" data-group="gotos">
+              <div class="ps-input-wrap">
+                <svg class="ps-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" class="field-input ps-input" placeholder="Search all Zildjian products...">
+                <div class="search-results" hidden></div>
+              </div>
+              <div class="list-box ps-selected" hidden></div>
+              <div class="list-hint">No go-to's added yet.</div>
+            </div>
+          </div>
+        </section> {% endcomment %}
+
+
+
+
+        <!-- 04 Go-To's (browse checklist) -->
+        <section id="s4">
+          <div class="section-heading"><span>04</span>Go-To's</div>
+          <div class="field-group">
+            <label class="field-label">What are your Go-To's?</label>
+            <div class="field-hint">Are there Zildjian products you just don't leave home without? Whether that's a must-have cymbal, sticks, apparel, bags, or gear.</div>
+
+          <div class="cymbal-picker" data-group="gotos" data-mode="search">
+              <div class="cp-search">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 14 14" fill="none">
+                  <path d="M6.41667 11.0833C8.994 11.0833 11.0833 8.994 11.0833 6.41667C11.0833 3.83934 8.994 1.75 6.41667 1.75C3.83934 1.75 1.75 3.83934 1.75 6.41667C1.75 8.994 3.83934 11.0833 6.41667 11.0833Z" stroke="#000000" stroke-width="1.16667"/>
+                  <path d="M12.2499 12.25L9.7124 9.71252" stroke="#000000" stroke-width="1.16667"/>
+                </svg>  
+                <input type="text" class="cp-input" placeholder="Search all Zildjian products...">
+              </div>
+              <div class="cp-list"></div>
+              <div class="cp-footer">
+                <span class="cp-filter">Full catalog — <strong>all product types</strong></span>
+                <span class="cp-actions"><span class="cp-count">0 selected</span> · <a class="cp-clear" href="#">Clear all</a></span> 
+              </div>
+               <div class="cp-selected" hidden></div>
+            </div>
+
+           
+          </div>
+        </section>
+
+
+        <!-- 05 Website & Socials -->
+        <section id="s5">
+          <div class="section-heading"><span>05</span>Website &amp; Socials</div>
+          <div class="field-group">
+            <label class="field-label">Website URL</label>
+            <div class="field-hint">Feel free to include a personal or band web address.</div>
+            <input class="field-input" name="website" type="url" placeholder="https://yourwebsite.com">
+          </div>
+          <div class="field-group-inner">
+            <div class="field-group">
+              <label class="field-label"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 15 15" fill="none">
+<path d="M10.625 1.25H4.375C2.64911 1.25 1.25 2.64911 1.25 4.375V10.625C1.25 12.3509 2.64911 13.75 4.375 13.75H10.625C12.3509 13.75 13.75 12.3509 13.75 10.625V4.375C13.75 2.64911 12.3509 1.25 10.625 1.25Z" stroke="#C13584" stroke-width="1.25"/>
+<path d="M9.99982 7.10619C10.0769 7.62635 9.9881 8.15758 9.74592 8.62433C9.50373 9.09108 9.12053 9.46958 8.65083 9.70599C8.18113 9.9424 7.64885 10.0247 7.12968 9.94115C6.61052 9.85761 6.13092 9.6125 5.75909 9.24067C5.38727 8.86884 5.14215 8.38924 5.05861 7.87008C4.97507 7.35091 5.05736 6.81863 5.29377 6.34893C5.53018 5.87923 5.90868 5.49603 6.37543 5.25385C6.84218 5.01166 7.37341 4.92281 7.89357 4.99994C8.42414 5.07862 8.91535 5.32586 9.29463 5.70514C9.6739 6.08441 9.92114 6.57562 9.99982 7.10619Z" stroke="#C13584" stroke-width="1.25"/>
+<path d="M10.9375 4.0625H10.9438" stroke="#C13584" stroke-width="1.25"/>
+</svg>Instagram</label>
+              <div class="field-hint">Please include the profile URL.</div>
+              <input class="field-input" name="instagram" type="url" placeholder="https://instagram.com/yourhandle">
+            </div>
+            <div class="field-group">
+              <label class="field-label"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 15 15" fill="none">
+<path d="M14.0874 4.0125C14.0088 3.71974 13.8549 3.45265 13.6411 3.23775C13.4273 3.02285 13.161 2.86763 12.8687 2.7875C11.7999 2.5 7.49993 2.5 7.49993 2.5C7.49993 2.5 3.19993 2.5 2.13118 2.7875C1.83883 2.86763 1.57253 3.02285 1.35873 3.23775C1.14492 3.45265 0.991067 3.71974 0.912435 4.0125C0.704343 5.16301 0.608061 6.33095 0.624935 7.5C0.608061 8.66905 0.704343 9.83699 0.912435 10.9875C0.985264 11.2872 1.13654 11.562 1.35072 11.7839C1.5649 12.0058 1.83428 12.1667 2.13118 12.25C3.19993 12.5 7.49993 12.5 7.49993 12.5C7.49993 12.5 11.7999 12.5 12.8687 12.2125C13.1603 12.1329 13.4261 11.9786 13.6398 11.7649C13.8536 11.5512 14.0079 11.2854 14.0874 10.9937C14.2959 9.84119 14.3922 8.67114 14.3749 7.5C14.3918 6.33095 14.2955 5.16301 14.0874 4.0125Z" fill="#FF0000"/>
+<path d="M6.09375 9.38755L9.6875 7.50005L6.09375 5.61255V9.38755Z" fill="white"/>
+</svg>YouTube Channel</label>
+              <div class="field-hint">Please include the profile URL.</div>
+              <input class="field-input" name="youtube" type="url" placeholder="https://youtube.com/@channel">
+            </div>
+            <div class="field-group">
+              <label class="field-label"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 15 15" fill="none">
+<path d="M11.25 1.25H9.375C8.5462 1.25 7.75134 1.57924 7.16529 2.16529C6.57924 2.75134 6.25 3.5462 6.25 4.375V6.25H4.375V8.75H6.25V13.75H8.75V8.75H10.625L11.25 6.25H8.75V4.375C8.75 4.20924 8.81585 4.05027 8.93306 3.93306C9.05027 3.81585 9.20924 3.75 9.375 3.75H11.25V1.25Z" fill="#1877F2"/>
+</svg>Facebook</label>
+              <div class="field-hint">Please include the entire url.</div>
+              <input class="field-input" name="facebook" type="url" placeholder="https://facebook.com/yourpage">
+            </div>
+            <div class="field-group">
+              <label class="field-label"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14" fill="none">
+<path d="M10.6423 1.3125H12.5719L8.35619 6.13083L13.3157 12.6875H9.43245L6.39095 8.71092L2.91078 12.6875H0.979945L5.48911 7.53375L0.731445 1.3125H4.71328L7.46253 4.94725L10.6423 1.3125ZM9.96503 11.5325H11.0343L4.13228 2.40683H2.98486L9.96503 11.5325Z" fill="#1A1A1A"/>
+</svg>Twitter / X</label>
+              <div class="field-hint">Please include the entire URL.</div>
+              <input class="field-input" name="twitter" type="url" placeholder="https://x.com/yourhandle">
+            </div>
+          <div class="field-group">
+            <label class="field-label"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14" fill="none">
+<path d="M11.4274 3.90258C10.8459 3.77471 10.3199 3.46592 9.92478 3.02052C9.52968 2.57512 9.28584 2.01601 9.22824 1.42341V1.16675H7.21573V9.14091C7.1605 9.54653 6.95957 9.91819 6.65043 10.1865C6.3413 10.4549 5.94509 10.6016 5.53574 10.5992C5.08862 10.5992 4.65983 10.4216 4.34367 10.1055C4.02752 9.78932 3.8499 9.36053 3.8499 8.91341C3.8499 8.4663 4.02752 8.03751 4.34367 7.72135C4.65983 7.4052 5.08862 7.22758 5.53574 7.22758C5.69907 7.22758 5.85074 7.25091 5.99657 7.28591V5.25591C5.84372 5.23659 5.6898 5.22685 5.53574 5.22675C4.55488 5.22675 3.61419 5.61639 2.92062 6.30996C2.22705 7.00354 1.8374 7.94422 1.8374 8.92508C1.8374 9.41075 1.93306 9.89167 2.11892 10.3404C2.30478 10.7891 2.5772 11.1968 2.92062 11.5402C3.61419 12.2338 4.55488 12.6234 5.53574 12.6234C6.51558 12.6219 7.45477 12.2315 8.14708 11.5381C8.83939 10.8447 9.22824 9.90493 9.22824 8.92508V5.06925C10.0428 5.65274 11.0204 5.965 12.0224 5.96175V3.93758C11.8234 3.9469 11.624 3.93517 11.4274 3.90258Z" fill="#1A1A1A"/>
+</svg>TikTok</label>
+            <div class="field-hint">Please include the profile URL.</div>
+            <input class="field-input" name="tiktok" type="url" placeholder="https://tiktok.com/@yourhandle">
+          </div>
+                    </div>
+
+
+        </section>
+
+        <!-- 06 Profile Photo -->
+        <section id="s6" >
+          <div class="section-heading"><span>06</span>Profile Photo</div>
+          <div class="field-group">
+            <label class="field-label">Profile Picture <span class="req">★</span></label>
+            <div class="field-hint">This is the photo visitors will see first when viewing your artist page. Please attach the highest resolution file you can.</div>
+            <div class="upload-box" data-upload="profilePhoto">
+              <input type="file" accept="image/*" class="upload-input" hidden>
+              <div class="upload-icon">↑</div>
+              <div class="upload-desktop">Drop your photo here or <span class="upload-link">browse files</span></div>
+                <div class="upload-desktop hidden"><span class="upload-link">Profile photo required</span></div>
+                <div class="upload-mobile hidden">Drop an image here or click to browse</div>
+              <div class="upload-mobile"><span>JPG, PNG, TIFF ·</span> Horizontal image preferred</div>
+              
+              <div class="upload-file"></div>
+              {% comment %} <div style="font-size:11px;color:#bbb">Min. 1000px wide recommended</div> {% endcomment %}
+            </div>
+          </div>
+          <div class="field-group margin-field-group">
+            <label class="field-label">Profile Picture Credit <span class="req">★</span></label>
+            <div class="field-hint">Please add the appropriate photo credit here for Vanya.</div>
+            <input class="field-input" name="profileCredit" type="text" placeholder="e.g. Photo by John Smith">
+          </div>
+          <div class="field-group ">
+            <label class="field-label">Profile Picture Rights <span class="req">★</span></label>
+            <div class="field-hint">Do we have the rights to use / edit this image?</div>
+            <label class="radio-line"><input type="radio" name="profileRights" value="Website and marketing"> Yes, for both the website and marketing.</label>
+            <label class="radio-line"><input type="radio" name="profileRights" value="Website only"> Yes, but for the website only.</label>
+          </div>
+        </section>
+
+        <!-- 07 Setup Photo -->
+        <section id="s7">
+          <div class="section-heading"><span>07</span>Setup Photo</div>
+          <div class="field-group">
+            <label class="field-label">Setup Picture <span class="req">★</span></label>
+            <div class="field-hint">This is the photo that will appear next to your cymbal setup. Ideally an over-the-top or full kit shot. <strong>Horizontal image preferred.</strong></div>
+            <div class="upload-box" data-upload="setupPhoto">
+              <input type="file" accept="image/*" class="upload-input" hidden>
+              <div class="upload-icon">↑</div>
+            <div class="upload-desktop">Drop your photo here or <span class="upload-link">browse files</span></div>
+                <div class="upload-desktop hidden"><span class="upload-link">Profile photo required</span></div>
+                <div class="upload-mobile hidden">Drop an image here or click to browse</div>
+              <div class="upload-mobile"><span>JPG, PNG, TIFF ·</span> Horizontal image preferred</div>
+              
+              <div class="upload-file"></div>
+            </div>
+          </div>
+          <div class="field-group margin-field-group">
+            <label class="field-label">Setup Picture Credit <span class="req">★</span></label>
+            <div class="field-hint">Please add the appropriate photo credit here for Vanya.</div>
+            <input class="field-input" name="setupCredit" type="text" placeholder="e.g. Photo by Jane Doe">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Setup Picture Rights <span class="req">★</span></label>
+            <div class="field-hint">Do we have the rights to use / edit this image?</div>
+            <label class="radio-line"><input type="radio" name="setupRights" value="Website and marketing"> Yes, for both the website and marketing.</label>
+            <label class="radio-line"><input type="radio" name="setupRights" value="Website only"> Yes, but for the website only.</label>
+          </div>
+        </section>
+
+        <!-- 08 Videos -->
+        <section id="s8" >
+          <div class="section-heading"><span>08</span>Videos</div>
+          <div class="field-group input_video">
+            <label class="field-label">Video 1</label>
+            <div class="field-hint">Links to video you would like featured on your artist page. Please list the full URL.</div>
+            <input class="field-input" name="video1" type="url" placeholder="https://youtu.be/... or https://vimeo.com/...">
+          </div>
+          <div class="field-group input_video video_2">
+            <label class="field-label">Video 2</label>
+            <div class="field-hint">Additional video you would like to feature. Please list the full URL.</div>
+            <input class="field-input" name="video2" type="url" placeholder="https://youtube.com/... or https://vimeo.com/...">
+          </div>
+
+          <div class="form-alert" data-alert hidden></div>
+
+          
+
+        </section>
+        <section class="bottom_content_wrap">
+          <p>    By submitting this form you confirm that all information provided is accurate and that you have the rights to use the submitted images. Contact your Artist Relations manager with any questions.</p>
+          <button class="submit-btn" type="submit">Submit Profile</button>
+          <div class="btn_btm_text">Once submitted, you will be moved to a confirmation screen.</div>
+          </section >
+
+      </form>
+    </main>
+  </div>
+
+
+
+
+
+</div>
+
+  <!-- Success modal -->
+  <div class="success-modal" data-success-modal hidden >
+    <div class="success-card">    
+      <div class="success-check">
+        <svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72" fill="none">
+<rect x="1" y="1" width="70" height="70" rx="35" stroke="#CC9F53" stroke-width="2"/>
+<path d="M46.6668 28L32.0002 42.6667L25.3335 36" stroke="#CC9F53" stroke-width="2"/>
+</svg>    
+      </div>
+      <h2 class="success-title">Profile Submitted</h2>
+      <p class="success-text">Thank you! Your artist profile has been submitted successfully. Due to the large number of entries, there may be a delay before your page goes live. Contact your Artist Relations Manager with any questions.</p>
+      <div class="success-actions">
+        <a class="success-btn primary" href="{{ block.settings.roster_url | default: '/pages/artist-roster' }}">View Artist Roster</a>
+
+        <a class="success-btn" href="{{ block.settings.home_url | default: '/' }}" data-hide-form>Back to Zildjian</a>
+
+      </div>
+    </div>
+  </div>
+
+
+<script src="{{ 'artist-form.js' | asset_url }}" defer></script>
+
+{% schema %}
+{
+  "name": "Artist Form",
+  "target": "section",
+  "settings": [     
+    {
+      "type": "text",
+      "id": "proxy_url",
+      "label": "Submit URL (app proxy path)",
+      "default": "/apps/artist-form/submit",
+      "info": "Must match the app proxy subpath in shopify.app.toml."
+    },
+    {
+      "type": "text",
+      "id": "search_url",
+      "label": "Product search URL (app proxy path)",
+      "default": "/apps/artist-form/search",
+      "info": "Same app proxy subpath, /search path."
+    },
+
+     {
+      "type": "url",
+      "id": "roster_url",
+      "label": "\"View Artist Roster\" link",
+      "info": "Where the roster button goes after submission."
+    },
+    {
+      "type": "url",
+      "id": "home_url",
+      "label": "\"Back to Zildjian\" link",
+      "info": "Where the back button goes."
+    }
+  ]
+}
+{% endschema %}

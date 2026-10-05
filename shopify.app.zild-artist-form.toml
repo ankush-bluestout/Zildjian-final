@@ -1,0 +1,23 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "79eb48ad66abb7e5e499fd0f82bdcdaa"
+name = "Zild Artist Form"
+application_url = "https://example.com"
+embedded = true
+
+[webhooks]
+api_version = "2026-10"
+
+[access_scopes]
+scopes = "read_products,write_products,read_content,write_content,read_files,write_files"
+
+[auth]
+redirect_urls = [ "https://example.com/api/auth" ]
+
+[build]
+automatically_update_urls_on_dev = true
+
+[app_proxy]
+url = "https://example.com"
+subpath = "artist-form"
+prefix = "apps"
