@@ -724,12 +724,20 @@ font-family: Montserrat;
 #artist-form-root .sidebar {
     display: none;
 }
+
 #artist-form-root .mobile-tabs {
     display: flex;
     position: sticky;
-    top: 0;
-    z-index: 1;
-}   
+    top: var(--header-h, 98px);
+    z-index: 5;
+    box-shadow: 0 2px 6px rgba(0,0,0,.12);
+}
+#artist-form-root section[id] {
+    scroll-margin-top: calc(var(--header-h, 98px) + 80px);
+}
+
+
+
     #artist-form-root .main {
         padding: 20px 20px 30px;
                 border: unset;

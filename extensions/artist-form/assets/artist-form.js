@@ -32,6 +32,18 @@
   var tabBar = root.querySelector(".mobile-tabs");
   var clickLock = false;
 
+
+  /* keep mobile tabs just below the site's sticky header */
+  var siteHeader = document.querySelector(".shopify-section-group-header-group");
+  function setHeaderH() {
+    var h = siteHeader ? Math.max(0, siteHeader.getBoundingClientRect().bottom) : 0;
+    root.style.setProperty("--header-h", h + "px");
+  }
+  setHeaderH();
+  window.addEventListener("resize", setHeaderH);
+  window.addEventListener("scroll", setHeaderH, { passive: true });
+
+
   function setActive(id) {
     navLinks.forEach(function (a) {
       a.classList.toggle("active", a.getAttribute("href") === "#" + id);
