@@ -34,7 +34,8 @@
 
 
   /* keep mobile tabs just below the site's sticky header */
-  var siteHeader = document.querySelector(".shopify-section-group-header-group");
+  var siteHeader = document.querySelector(".section-header");
+  
   function setHeaderH() {
     var h = siteHeader ? Math.max(0, siteHeader.getBoundingClientRect().bottom) : 0;
     root.style.setProperty("--header-h", h + "px");

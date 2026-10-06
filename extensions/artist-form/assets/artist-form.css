@@ -735,6 +735,10 @@ font-family: Montserrat;
 #artist-form-root section[id] {
     scroll-margin-top: calc(var(--header-h, 98px) + 80px);
 }
+/* mobile: keep the black site header visible while scrolling (this page only) */
+.section-header.shopify-section-header-hidden {
+    top: 0 !important;
+}
 
 
 
