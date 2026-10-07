@@ -630,9 +630,8 @@
       ["role",          WARN + "Please select an option."],
       ["country",       WARN + "Please select your country."],
       ["quote",         WARN + "Please share your Zildjian quote."],
-      ["profileCredit", WARN + "Please add the photo credit."],
-      ["setupCredit",   WARN + "Please add the photo credit."]
     ];
+    
     requiredNamed.forEach(function (pair) {
       var el = form.querySelector('[name="' + pair[0] + '"]');
       if (!el) return;
