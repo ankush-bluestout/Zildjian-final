@@ -197,7 +197,7 @@ function log(...args) {
   console.log("🎯 [artist-form]", ...args);
 }
 
-function buildMetafields(d) {
+function buildMetafields(d, definitions) {
   const NS = "artist";
   const mf = [];
   const text = (key, val) => { if (val) mf.push({ namespace: NS, key, type: "single_line_text_field", value: String(val) }); };
@@ -206,14 +206,30 @@ function buildMetafields(d) {
   text("role", d.role);
   text("country", d.country);
   if (d.quote) mf.push({ namespace: NS, key: "quote", type: "multi_line_text_field", value: String(d.quote) });
-  text("website", d.website);
-  text("instagram", d.instagram);
-  text("youtube", d.youtube);
-  text("facebook", d.facebook);
-  text("twitter", d.twitter);
   text("tiktok", d.tiktok);
   const videos = [d.video1, d.video2].filter(Boolean).join("\n");
-  if (videos) mf.push({ namespace: "global", key: "youtube", type: "multi_line_text_field", value: videos });
+  const definitionValues = [
+    ["Website", d.website],
+    ["Instagram", d.instagram],
+    ["YouTube", d.youtube],
+    ["Facebook", d.facebook],
+    ["Twitter", d.twitter],
+    ["Video", videos],
+  ];
+  definitionValues.forEach(([name, value]) => {
+    if (!value) return;
+    const matches = definitions.filter((definition) => definition.name.toLowerCase() === name.toLowerCase());
+    if (matches.length !== 1) {
+      throw new Error(`Expected one blog post metafield definition named "${name}", found ${matches.length}.`);
+    }
+    const definition = matches[0];
+    mf.push({
+      namespace: definition.namespace,
+      key: definition.key,
+      type: definition.type.name,
+      value: String(value),
+    });
+  });
   text("profile_credit", d.profileCredit);
   text("profile_rights", d.profileRights);
   text("setup_credit", d.setupCredit);
@@ -222,7 +238,21 @@ function buildMetafields(d) {
   const cymbalIds = (d.cymbals || []).map((p) => p.id).filter(Boolean);
   const gotoIds = (d.gotos || []).map((p) => p.id).filter(Boolean);
   if (cymbalIds.length) mf.push({ namespace: NS, key: "cymbal_setup", type: "list.product_reference", value: JSON.stringify(cymbalIds) });
-  if (gotoIds.length) mf.push({ namespace: NS, key: "go_tos", type: "list.product_reference", value: JSON.stringify(gotoIds) });
+  if (gotoIds.length) {
+    const gotoDefinitions = definitions.filter(
+      (definition) => definition.name.toLowerCase() === "go-to products",
+    );
+    if (gotoDefinitions.length !== 1) {
+      throw new Error(`Expected one blog post metafield definition named "Go-To Products", found ${gotoDefinitions.length}.`);
+    }
+    const definition = gotoDefinitions[0];
+    mf.push({
+      namespace: definition.namespace,
+      key: definition.key,
+      type: definition.type.name,
+      value: JSON.stringify(gotoIds),
+    });
+  }
 
   const manualCymbals = (d.cymbals || [])
     .filter((p) => p && p.manual && p.title)
@@ -231,6 +261,24 @@ function buildMetafields(d) {
     mf.push({ namespace: NS, key: "cymbal_setup_manual", type: "list.single_line_text_field", value: JSON.stringify(manualCymbals) });
   }
   return mf;
+}
+
+async function getArticleMetafieldDefinitions(admin) {
+  const response = await admin.graphql(
+    `#graphql
+     query ArticleMetafieldDefinitions {
+       metafieldDefinitions(ownerType: ARTICLE, first: 250) {
+         nodes { name namespace key type { name } }
+       }
+     }`
+  );
+  const json = await response.json();
+  if (json.errors?.length) {
+    throw new Error(json.errors.map((error) => error.message).join("; "));
+  }
+  const definitions = json.data?.metafieldDefinitions?.nodes;
+  if (!definitions) throw new Error("Shopify returned no blog post metafield definitions.");
+  return definitions;
 }
 
 function buildBody(d) {
@@ -393,6 +441,14 @@ export async function action({ request }) {
     return Response.json({ ok: false, error: "No blog found. Create one in Content -> Blogs." }, { status: 500 });
   }
 
+  let metafieldDefinitions;
+  try {
+    metafieldDefinitions = await getArticleMetafieldDefinitions(admin);
+  } catch (e) {
+    log("STEP 3.2 FAILED: metafield definition lookup:", e?.message);
+    return Response.json({ ok: false, error: "Could not load blog post metafield definitions: " + (e?.message || e) }, { status: 500 });
+  }
+
   // upload the profile photo
   let image = null;
   if (d.profilePhoto && d.profilePhoto.dataUrl) {
@@ -411,7 +467,7 @@ export async function action({ request }) {
       summary: d.quote ? String(d.quote).slice(0, 250) : undefined,
       tags: ["artist-profile", "draft-submission"],
       isPublished: false,
-      metafields: buildMetafields(d),
+      metafields: buildMetafields(d, metafieldDefinitions),
     };
     if (image && image.url) {
       article.image = { url: image.url, altText: `${d.name} profile photo` };
@@ -474,4 +530,3 @@ export async function action({ request }) {
     return Response.json({ ok: false, error: "articleCreate threw: " + (e?.message || e) }, { status: 500 });
   }
 }
-
