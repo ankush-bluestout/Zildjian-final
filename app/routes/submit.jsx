@@ -212,8 +212,8 @@ function buildMetafields(d) {
   text("facebook", d.facebook);
   text("twitter", d.twitter);
   text("tiktok", d.tiktok);
-  text("video_1", d.video1);
-  text("video_2", d.video2);
+  const videos = [d.video1, d.video2].filter(Boolean).join("\n");
+  if (videos) mf.push({ namespace: "global", key: "youtube", type: "multi_line_text_field", value: videos });
   text("profile_credit", d.profileCredit);
   text("profile_rights", d.profileRights);
   text("setup_credit", d.setupCredit);
@@ -474,5 +474,4 @@ export async function action({ request }) {
     return Response.json({ ok: false, error: "articleCreate threw: " + (e?.message || e) }, { status: 500 });
   }
 }
-
 
