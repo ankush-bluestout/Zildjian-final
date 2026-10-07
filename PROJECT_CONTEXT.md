@@ -57,7 +57,7 @@ Pending at time of writing: a full test submission (check Content → Blog posts
 
 ## Known gaps / ideas
 
-- `setupPhoto` is sent by the form (artist-form.js) but **ignored** by `submit.jsx` — only the profile photo is uploaded.
+- Both `profilePhoto` and `setupPhoto` are uploaded to Shopify Files by `submit.jsx`; the profile photo is used as the article image and the setup photo is saved to the `Cymbal Setup Image` article metafield.
 - Photos are sent as base64 in JSON; large images may be slow or time out on the free plan.
 - `extensions/artist-form/blocks/artist-form.liquid` loads Google Fonts remotely (deploy shows harmless "RemoteAsset" warnings).
 - Suggested Render Build Filter: ignore `extensions/**` and `*.toml` so form-only pushes do not redeploy the server.

@@ -197,7 +197,7 @@ function log(...args) {
   console.log("🎯 [artist-form]", ...args);
 }
 
-function buildMetafields(d, definitions) {
+function buildMetafields(d, definitions, setupImageId) {
   const NS = "artist";
   const mf = [];
   const text = (key, val) => { if (val) mf.push({ namespace: NS, key, type: "single_line_text_field", value: String(val) }); };
@@ -235,6 +235,24 @@ function buildMetafields(d, definitions) {
       value: String(value),
     });
   });
+  if (setupImageId) {
+    const matches = definitions.filter(
+      (definition) => definition.name.toLowerCase() === "cymbal setup image",
+    );
+    if (matches.length !== 1) {
+      throw new Error(`Expected one blog post metafield definition named "Cymbal Setup Image", found ${matches.length}.`);
+    }
+    const definition = matches[0];
+    if (definition.type.name !== "file_reference") {
+      throw new Error(`"Cymbal Setup Image" must be a file metafield, found "${definition.type.name}".`);
+    }
+    mf.push({
+      namespace: definition.namespace,
+      key: definition.key,
+      type: definition.type.name,
+      value: setupImageId,
+    });
+  }
   text("profile_credit", d.profileCredit);
   text("profile_rights", d.profileRights);
   text("setup_credit", d.setupCredit);
@@ -302,95 +320,100 @@ function buildBody(d) {
   ].filter(Boolean).join("\n");
 }
 
-/* ---- upload a base64 dataURL to Shopify Files, return { url, id } ---- */
-async function uploadProfileImage(admin, photo) {
-  try {
-    if (!photo || !photo.dataUrl) { log("IMG: no photo/dataUrl"); return null; }
+/* ---- upload a base64 image to Shopify Files, return { url, id } ---- */
+async function uploadImage(admin, photo) {
+  if (!photo || !photo.dataUrl) throw new Error("Image file data is missing.");
 
-    const match = /^data:(.+?);base64,(.*)$/s.exec(photo.dataUrl);
-    if (!match) { log("IMG: dataUrl is not base64"); return null; }
-    const mimeType = match[1];
-    const base64 = match[2];
-    const bytes = Buffer.from(base64, "base64");
-    const filename = (photo.name || "profile.jpg").replace(/[^\w.\-]+/g, "_");
-    log("IMG: decoded", { mimeType, filename, bytes: bytes.length });
+  const match = /^data:(.+?);base64,(.*)$/s.exec(photo.dataUrl);
+  if (!match) throw new Error("Image data must be a base64 data URL.");
+  const mimeType = match[1];
+  const base64 = match[2];
+  const bytes = Buffer.from(base64, "base64");
+  const filename = (photo.name || "artist-photo.jpg").replace(/[^\w.-]+/g, "_");
+  log("IMG: decoded", { mimeType, filename, bytes: bytes.length });
 
-    // 1) staged upload target
-    const stagedRes = await admin.graphql(
-      `#graphql
-       mutation StagedUpload($input: [StagedUploadInput!]!) {
-         stagedUploadsCreate(input: $input) {
-           stagedTargets { url resourceUrl parameters { name value } }
-           userErrors { field message }
-         }
-       }`,
-      {
-        variables: {
-          input: [{
-            filename,
-            mimeType,
-            httpMethod: "POST",
-            resource: "FILE",
-            fileSize: String(bytes.length),
-          }],
-        },
-      }
-    );
-    const stagedJson = await stagedRes.json();
-    log("IMG: stagedUploadsCreate =", JSON.stringify(stagedJson));
-    const target = stagedJson.data?.stagedUploadsCreate?.stagedTargets?.[0];
-    if (!target) { log("IMG: NO staged target"); return null; }
-
-    // 2) POST bytes to the staged URL
-    const fd = new FormData();
-    (target.parameters || []).forEach((p) => fd.append(p.name, p.value));
-    fd.append("file", new Blob([bytes], { type: mimeType }), filename);
-    const upload = await fetch(target.url, { method: "POST", body: fd });
-    log("IMG: staged POST status =", upload.status);
-    if (!upload.ok) {
-      const t = await upload.text().catch(() => "");
-      log("IMG: staged POST body =", t.slice(0, 500));
-      return null;
+  const stagedRes = await admin.graphql(
+    `#graphql
+     mutation StagedUpload($input: [StagedUploadInput!]!) {
+       stagedUploadsCreate(input: $input) {
+         stagedTargets { url resourceUrl parameters { name value } }
+         userErrors { field message }
+       }
+     }`,
+    {
+      variables: {
+        input: [{
+          filename,
+          mimeType,
+          httpMethod: "POST",
+          resource: "FILE",
+          fileSize: String(bytes.length),
+        }],
+      },
     }
-
-    // 3) register the file
-    const fileRes = await admin.graphql(
-      `#graphql
-       mutation FileCreate($files: [FileCreateInput!]!) {
-         fileCreate(files: $files) {
-           files { id fileStatus alt ... on MediaImage { image { url } } }
-           userErrors { field message }
-         }
-       }`,
-      { variables: { files: [{ alt: filename, contentType: "IMAGE", originalSource: target.resourceUrl }] } }
-    );
-    const fileJson = await fileRes.json();
-    log("IMG: fileCreate =", JSON.stringify(fileJson));
-    const file = fileJson.data?.fileCreate?.files?.[0];
-    if (!file) { log("IMG: NO file from fileCreate"); return null; }
-
-    let url = file.image?.url || null;
-    if (!url && file.id) {
-      for (let i = 0; i < 6 && !url; i++) {
-        await new Promise((r) => setTimeout(r, 900));
-        const check = await admin.graphql(
-          `#graphql
-           query FileUrl($id: ID!) {
-             node(id: $id) { ... on MediaImage { image { url } fileStatus } }
-           }`,
-          { variables: { id: file.id } }
-        );
-        const checkJson = await check.json();
-        url = checkJson.data?.node?.image?.url || null;
-        log("IMG: poll", i, "url =", url);
-      }
-    }
-    log("IMG: FINAL url =", url, "id =", file.id);
-    return { url, id: file.id };
-  } catch (e) {
-    log("IMG upload THREW:", e?.message, e?.stack);
-    return null;
+  );
+  const stagedJson = await stagedRes.json();
+  if (stagedJson.errors?.length) {
+    throw new Error(stagedJson.errors.map((error) => error.message).join("; "));
   }
+  const stagedPayload = stagedJson.data?.stagedUploadsCreate;
+  if (stagedPayload?.userErrors?.length) {
+    throw new Error(stagedPayload.userErrors.map((error) => error.message).join("; "));
+  }
+  const target = stagedPayload?.stagedTargets?.[0];
+  if (!target) throw new Error("Shopify did not return a staged upload target.");
+
+  const fd = new FormData();
+  (target.parameters || []).forEach((parameter) => fd.append(parameter.name, parameter.value));
+  fd.append("file", new Blob([bytes], { type: mimeType }), filename);
+  const upload = await fetch(target.url, { method: "POST", body: fd });
+  log("IMG: staged POST status =", upload.status);
+  if (!upload.ok) {
+    throw new Error(`Shopify staged image upload failed with status ${upload.status}.`);
+  }
+
+  const fileRes = await admin.graphql(
+    `#graphql
+     mutation FileCreate($files: [FileCreateInput!]!) {
+       fileCreate(files: $files) {
+         files { id fileStatus alt ... on MediaImage { image { url } } }
+         userErrors { field message }
+       }
+     }`,
+    { variables: { files: [{ alt: filename, contentType: "IMAGE", originalSource: target.resourceUrl }] } }
+  );
+  const fileJson = await fileRes.json();
+  if (fileJson.errors?.length) {
+    throw new Error(fileJson.errors.map((error) => error.message).join("; "));
+  }
+  const filePayload = fileJson.data?.fileCreate;
+  if (filePayload?.userErrors?.length) {
+    throw new Error(filePayload.userErrors.map((error) => error.message).join("; "));
+  }
+  const file = filePayload?.files?.[0];
+  if (!file?.id) throw new Error("Shopify did not create the uploaded image file.");
+
+  let url = file.image?.url || null;
+  if (!url) {
+    for (let i = 0; i < 6 && !url; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 900));
+      const check = await admin.graphql(
+        `#graphql
+         query FileUrl($id: ID!) {
+           node(id: $id) { ... on MediaImage { image { url } fileStatus } }
+         }`,
+        { variables: { id: file.id } }
+      );
+      const checkJson = await check.json();
+      if (checkJson.errors?.length) {
+        throw new Error(checkJson.errors.map((error) => error.message).join("; "));
+      }
+      url = checkJson.data?.node?.image?.url || null;
+      log("IMG: poll", i, "url =", url);
+    }
+  }
+  log("IMG: FINAL url =", url, "id =", file.id);
+  return { url, id: file.id };
 }
 
 export async function action({ request }) {
@@ -423,6 +446,9 @@ export async function action({ request }) {
     log("STEP 2 FAILED:", e?.message);
     return Response.json({ ok: false, error: "Bad JSON body: " + (e?.message || e) }, { status: 400 });
   }
+  if (!d.profilePhoto?.dataUrl || !d.setupPhoto?.dataUrl) {
+    return Response.json({ ok: false, error: "Please include both the profile photo and setup photo." }, { status: 400 });
+  }
 
   let BLOG_ID = process.env.SHOPIFY_BLOG_ID;
   try {
@@ -452,13 +478,16 @@ export async function action({ request }) {
     return Response.json({ ok: false, error: "Could not load blog post metafield definitions: " + (e?.message || e) }, { status: 500 });
   }
 
-  // upload the profile photo
-  let image = null;
-  if (d.profilePhoto && d.profilePhoto.dataUrl) {
+  let image;
+  let setupImage;
+  try {
     log("STEP 3.5: uploading profile photo...");
-    image = await uploadProfileImage(admin, d.profilePhoto);
-  } else {
-    log("STEP 3.5: no profile photo to upload");
+    image = await uploadImage(admin, d.profilePhoto);
+    log("STEP 3.6: uploading setup photo...");
+    setupImage = await uploadImage(admin, d.setupPhoto);
+  } catch (e) {
+    log("IMAGE UPLOAD FAILED:", e?.message);
+    return Response.json({ ok: false, error: "Could not upload submitted images: " + (e?.message || e) }, { status: 502 });
   }
 
   try {
@@ -470,7 +499,7 @@ export async function action({ request }) {
       summary: d.quote ? String(d.quote).slice(0, 250) : undefined,
       tags: ["artist-profile", "draft-submission"],
       isPublished: false,
-      metafields: buildMetafields(d, metafieldDefinitions),
+      metafields: buildMetafields(d, metafieldDefinitions, setupImage.id),
     };
     if (image && image.url) {
       article.image = { url: image.url, altText: `${d.name} profile photo` };
