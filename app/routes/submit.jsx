@@ -201,10 +201,8 @@ function buildMetafields(d, definitions) {
   const NS = "artist";
   const mf = [];
   const text = (key, val) => { if (val) mf.push({ namespace: NS, key, type: "single_line_text_field", value: String(val) }); };
-  text("band", d.band);
   text("artist_type", d.artistType);
   text("role", d.role);
-  text("country", d.country);
   if (d.quote) mf.push({ namespace: NS, key: "quote", type: "multi_line_text_field", value: String(d.quote) });
   text("tiktok", d.tiktok);
   const videos = [d.video1, d.video2].filter(Boolean).join("\n");
@@ -213,6 +211,8 @@ function buildMetafields(d, definitions) {
     .map((product) => `${product.title}${product.sku ? ` (${product.sku})` : ""}`)
     .join("\n");
   const definitionValues = [
+    ["Affiliation", d.band],
+    ["country", d.country],
     ["Website", d.website],
     ["Instagram", d.instagram],
     ["YouTube", d.youtube],
