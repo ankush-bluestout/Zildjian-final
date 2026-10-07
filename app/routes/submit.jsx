@@ -208,6 +208,10 @@ function buildMetafields(d, definitions) {
   if (d.quote) mf.push({ namespace: NS, key: "quote", type: "multi_line_text_field", value: String(d.quote) });
   text("tiktok", d.tiktok);
   const videos = [d.video1, d.video2].filter(Boolean).join("\n");
+  const cymbalSetup = (d.cymbals || [])
+    .filter((product) => product && product.title)
+    .map((product) => `${product.title}${product.sku ? ` (${product.sku})` : ""}`)
+    .join("\n");
   const definitionValues = [
     ["Website", d.website],
     ["Instagram", d.instagram],
@@ -215,6 +219,7 @@ function buildMetafields(d, definitions) {
     ["Facebook", d.facebook],
     ["Twitter", d.twitter],
     ["Video", videos],
+    ["Cymbal Setup", cymbalSetup],
   ];
   definitionValues.forEach(([name, value]) => {
     if (!value) return;
@@ -235,9 +240,7 @@ function buildMetafields(d, definitions) {
   text("setup_credit", d.setupCredit);
   text("setup_rights", d.setupRights);
 
-  const cymbalIds = (d.cymbals || []).map((p) => p.id).filter(Boolean);
   const gotoIds = (d.gotos || []).map((p) => p.id).filter(Boolean);
-  if (cymbalIds.length) mf.push({ namespace: NS, key: "cymbal_setup", type: "list.product_reference", value: JSON.stringify(cymbalIds) });
   if (gotoIds.length) {
     const gotoDefinitions = definitions.filter(
       (definition) => definition.name.toLowerCase() === "go-to products",

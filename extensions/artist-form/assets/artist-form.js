@@ -770,7 +770,9 @@
         var payload = Object.fromEntries(fd.entries());
 
         
-        payload.cymbals = (selected.cymbals || []).map(function (p) { return { id: p.id, title: p.title }; });
+        payload.cymbals = (selected.cymbals || []).map(function (p) {
+          return { id: p.id, title: p.title, sku: p.sku };
+        });
 
         // manual free-text cymbals: one per line, sent as {title} (no id)
         var manualEl = form.querySelector('[name="cymbalsManual"]');
