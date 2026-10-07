@@ -680,6 +680,10 @@
     border: 1px solid #E3D0A6!important;
 }
 
+.manual-input {
+  display: block;   
+  width: 100%;
+}
 
 
 .manual-cymbals .manual-hint {
