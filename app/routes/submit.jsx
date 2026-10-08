@@ -525,7 +525,7 @@ export async function action({ request }) {
   try {
     const article = {
       blogId: BLOG_ID,
-      title: `${d.name}${d.band ? " — " + d.band : ""}`,
+      title: d.name,
       author: { name: d.name },
       body: buildBody(d),
       summary: d.quote ? String(d.quote).slice(0, 250) : undefined,
