@@ -197,7 +197,7 @@ function log(...args) {
   console.log("🎯 [artist-form]", ...args);
 }
 
-function buildMetafields(d, definitions, setupImageId) {
+function buildMetafields(d, definitions, setupImageId, profileImageId) {
   const NS = "artist";
   const mf = [];
   const text = (key, val) => { if (val) mf.push({ namespace: NS, key, type: "single_line_text_field", value: String(val) }); };
@@ -235,23 +235,39 @@ function buildMetafields(d, definitions, setupImageId) {
       value: String(value),
     });
   });
+  if (profileImageId) {
+    const matches = definitions.filter(
+      (definition) => definition.name.toLowerCase() === "featured banner image",
+    );
+    if (matches.length === 1) {
+      const definition = matches[0];
+      if (definition.type.name !== "file_reference") {
+        throw new Error(`"Featured Banner Image" must be a file metafield, found "${definition.type.name}".`);
+      }
+      mf.push({
+        namespace: definition.namespace,
+        key: definition.key,
+        type: definition.type.name,
+        value: profileImageId,
+      });
+    }
+  }
   if (setupImageId) {
     const matches = definitions.filter(
       (definition) => definition.name.toLowerCase() === "cymbal setup image",
     );
-    if (matches.length !== 1) {
-      throw new Error(`Expected one blog post metafield definition named "Cymbal Setup Image", found ${matches.length}.`);
+    if (matches.length === 1) {
+      const definition = matches[0];
+      if (definition.type.name !== "file_reference") {
+        throw new Error(`"Cymbal Setup Image" must be a file metafield, found "${definition.type.name}".`);
+      }
+      mf.push({
+        namespace: definition.namespace,
+        key: definition.key,
+        type: definition.type.name,
+        value: setupImageId,
+      });
     }
-    const definition = matches[0];
-    if (definition.type.name !== "file_reference") {
-      throw new Error(`"Cymbal Setup Image" must be a file metafield, found "${definition.type.name}".`);
-    }
-    mf.push({
-      namespace: definition.namespace,
-      key: definition.key,
-      type: definition.type.name,
-      value: setupImageId,
-    });
   }
   text("profile_credit", d.profileCredit);
   text("profile_rights", d.profileRights);
@@ -310,11 +326,27 @@ function buildBody(d) {
   const manualBlock = manualCymbals.length
     ? `<p><strong>Manually added cymbals:</strong></p><ul>${manualCymbals.map((t) => `<li>${t}</li>`).join("")}</ul>`
     : "";
+  const socialFields = [
+    row("Website", d.website),
+    row("Instagram", d.instagram),
+    row("YouTube", d.youtube),
+    row("Facebook", d.facebook),
+    row("Twitter", d.twitter),
+    row("TikTok", d.tiktok),
+    row("Video 1", d.video1),
+    row("Video 2", d.video2),
+  ].join("\n");
+  const cymballist = (d.cymbals || [])
+    .filter((product) => product && product.title)
+    .map((product) => `${product.title}${product.sku ? ` (${product.sku})` : ""}`)
+    .join("\n");
   return [
     row("Band / Affiliation", d.band),
     row("Artist Type", d.artistType),
     row("Educator / Performer", d.role),
     row("Country", d.country),
+    socialFields,
+    row("Cymbal Setup", cymballist),
     d.quote ? `<blockquote>${d.quote}</blockquote>` : "",
     manualBlock,
   ].filter(Boolean).join("\n");
@@ -499,7 +531,7 @@ export async function action({ request }) {
       summary: d.quote ? String(d.quote).slice(0, 250) : undefined,
       tags: ["artist-profile", "draft-submission"],
       isPublished: false,
-      metafields: buildMetafields(d, metafieldDefinitions, setupImage.id),
+      metafields: buildMetafields(d, metafieldDefinitions, setupImage.id, image.id),
     };
     if (image && image.url) {
       article.image = { url: image.url, altText: `${d.name} profile photo` };
