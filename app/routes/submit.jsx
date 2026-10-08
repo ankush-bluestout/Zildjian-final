@@ -168,7 +168,7 @@
 
 
 
-  
+
 
 
 
@@ -327,7 +327,7 @@ function buildBody(d) {
     ? `<p><strong>Manually added cymbals:</strong></p><ul>${manualCymbals.map((t) => `<li>${t}</li>`).join("")}</ul>`
     : "";
   return [
-    d.quote ? `<blockquote>${d.quote}</blockquote>` : "", 
+    d.quote ? `<blockquote>${d.quote}</blockquote>` : "",
     row("Band / Affiliation", d.band),
     row("Artist Type", d.artistType),
     row("Educator / Performer", d.role),
@@ -509,7 +509,7 @@ export async function action({ request }) {
   try {
     const article = {
       blogId: BLOG_ID,
-      title: `${d.name}${d.band ? " — " + d.band : ""}`,
+      title: d.name,
       author: { name: d.name },
       body: buildBody(d),
       summary: d.quote ? String(d.quote).slice(0, 250) : undefined,
