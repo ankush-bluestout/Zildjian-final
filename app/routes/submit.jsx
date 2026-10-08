@@ -326,34 +326,11 @@ function buildBody(d) {
   const manualBlock = manualCymbals.length
     ? `<p><strong>Manually added cymbals:</strong></p><ul>${manualCymbals.map((t) => `<li>${t}</li>`).join("")}</ul>`
     : "";
-
-  const normalizedVideo1 = String(d.video1 || "").trim();
-  const normalizedVideo2 = String(d.video2 || "").trim();
-  const hasDistinctVideo2 = normalizedVideo2 && normalizedVideo2 !== normalizedVideo1;
-
-  const socialFields = [
-    row("Website", d.website),
-    row("Instagram", d.instagram),
-    row("YouTube", d.youtube),
-    row("Facebook", d.facebook),
-    row("Twitter", d.twitter),
-    row("TikTok", d.tiktok),
-    row("Video 1", normalizedVideo1),
-    hasDistinctVideo2 ? row("Video 2", normalizedVideo2) : "",
-  ].filter(Boolean).join("\n");
-
-  const cymballist = (d.cymbals || [])
-    .filter((product) => product && product.title)
-    .map((product) => `${product.title}${product.sku ? ` (${product.sku})` : ""}`)
-    .join("\n");
-
   return [
     row("Band / Affiliation", d.band),
     row("Artist Type", d.artistType),
     row("Educator / Performer", d.role),
     row("Country", d.country),
-    socialFields,
-    row("Cymbal Setup", cymballist),
     d.quote ? `<blockquote>${d.quote}</blockquote>` : "",
     manualBlock,
   ].filter(Boolean).join("\n");
@@ -532,7 +509,7 @@ export async function action({ request }) {
   try {
     const article = {
       blogId: BLOG_ID,
-      title: d.name,
+      title: `${d.name}${d.band ? " — " + d.band : ""}`,
       author: { name: d.name },
       body: buildBody(d),
       summary: d.quote ? String(d.quote).slice(0, 250) : undefined,
