@@ -327,11 +327,11 @@ function buildBody(d) {
     ? `<p><strong>Manually added cymbals:</strong></p><ul>${manualCymbals.map((t) => `<li>${t}</li>`).join("")}</ul>`
     : "";
   return [
+    d.quote ? `<blockquote>${d.quote}</blockquote>` : "", 
     row("Band / Affiliation", d.band),
     row("Artist Type", d.artistType),
     row("Educator / Performer", d.role),
     row("Country", d.country),
-    d.quote ? `<blockquote>${d.quote}</blockquote>` : "",
     manualBlock,
   ].filter(Boolean).join("\n");
 }
