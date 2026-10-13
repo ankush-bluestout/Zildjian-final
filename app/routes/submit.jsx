@@ -197,6 +197,25 @@ function log(...args) {
   console.log("🎯 [artist-form]", ...args);
 }
 
+function normalizeUrlMetafieldValue(value, name) {
+  const raw = String(value).trim();
+  const normalized = raw.startsWith("//")
+    ? `https:${raw}`
+    : /^[a-z][a-z\d+.-]*:/i.test(raw)
+      ? raw
+      : `https://${raw}`;
+  let url;
+  try {
+    url = new URL(normalized);
+  } catch {
+    throw new Error(`"${name}" must be a valid URL.`);
+  }
+  if (!["http:", "https:", "mailto:", "sms:", "tel:"].includes(url.protocol)) {
+    throw new Error(`"${name}" must use http, https, mailto, sms, or tel.`);
+  }
+  return url.toString();
+}
+
 function buildMetafields(d, definitions, setupImageId, profileImageId) {
   const NS = "artist";
   const mf = [];
@@ -232,7 +251,9 @@ function buildMetafields(d, definitions, setupImageId, profileImageId) {
       namespace: definition.namespace,
       key: definition.key,
       type: definition.type.name,
-      value: String(value),
+      value: definition.type.name === "url"
+        ? normalizeUrlMetafieldValue(value, name)
+        : String(value),
     });
   });
   if (profileImageId) {
