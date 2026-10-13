@@ -340,7 +340,14 @@ async function getArticleMetafieldDefinitions(admin) {
 }
 
 function buildBody(d) {
-  return d.quote ? `<blockquote>${d.quote}</blockquote>` : "";
+  if (!d.quote) return "";
+  const quote = String(d.quote)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+  return `<p>${quote}</p>`;
 }
 
 /* ---- upload a base64 image to Shopify Files, return { url, id } ---- */
