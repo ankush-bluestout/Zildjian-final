@@ -201,24 +201,24 @@ function buildMetafields(d, definitions, setupImageId, profileImageId) {
   const NS = "artist";
   const mf = [];
   const text = (key, val) => { if (val) mf.push({ namespace: NS, key, type: "single_line_text_field", value: String(val) }); };
-  text("artist_type", d.artistType);
-  text("role", d.role);
   if (d.quote) mf.push({ namespace: NS, key: "quote", type: "multi_line_text_field", value: String(d.quote) });
   text("tiktok", d.tiktok);
-  const videos = [d.video1, d.video2].filter(Boolean).join("\n");
   const cymbalSetup = (d.cymbals || [])
     .filter((product) => product && product.title)
     .map((product) => `${product.title}${product.sku ? ` (${product.sku})` : ""}`)
     .join("\n");
   const definitionValues = [
     ["Affiliation", d.band],
+    ["Artist Type", d.artistType],
+    ["Educator or Performer", d.role],
     ["country", d.country],
     ["Website", d.website],
     ["Instagram", d.instagram],
     ["YouTube", d.youtube],
     ["Facebook", d.facebook],
     ["Twitter", d.twitter],
-    ["Video", videos],
+    ["Video 1", d.video1],
+    ["Video 2", d.video2],
     ["Cymbal Setup", cymbalSetup],
   ];
   definitionValues.forEach(([name, value]) => {
@@ -319,21 +319,7 @@ async function getArticleMetafieldDefinitions(admin) {
 }
 
 function buildBody(d) {
-  const row = (label, value) => (value ? `<p><strong>${label}:</strong> ${value}</p>` : "");
-  const manualCymbals = (d.cymbals || [])
-    .filter((p) => p && p.manual && p.title)
-    .map((p) => String(p.title));
-  const manualBlock = manualCymbals.length
-    ? `<p><strong>Manually added cymbals:</strong></p><ul>${manualCymbals.map((t) => `<li>${t}</li>`).join("")}</ul>`
-    : "";
-  return [
-    d.quote ? `<blockquote>${d.quote}</blockquote>` : "",
-    row("Band / Affiliation", d.band),
-    row("Artist Type", d.artistType),
-    row("Educator / Performer", d.role),
-    row("Country", d.country),
-    manualBlock,
-  ].filter(Boolean).join("\n");
+  return d.quote ? `<blockquote>${d.quote}</blockquote>` : "";
 }
 
 /* ---- upload a base64 image to Shopify Files, return { url, id } ---- */
