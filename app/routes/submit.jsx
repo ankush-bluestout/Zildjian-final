@@ -249,13 +249,20 @@ function buildMetafields(d, definitions, setupImageId, profileImageId) {
       throw new Error(`Expected one blog post metafield definition named "${name}", found ${matches.length}.`);
     }
     const definition = matches[0];
+    let outValue = String(value);
+    if (definition.type.name.includes("product_reference")) {
+      const toProductGid = (id) => (String(id).startsWith("gid://") ? String(id) : `gid://shopify/Product/${id}`);
+      const ids = (d.cymbals || []).filter((p) => p && !p.manual && p.id).map((p) => toProductGid(p.id));
+      if (!ids.length) return;
+      outValue = definition.type.name.startsWith("list.") ? JSON.stringify(ids) : ids[0];
+    } else if (definition.type.name === "url") {
+      outValue = normalizeUrlMetafieldValue(value, name);
+    }
     mf.push({
       namespace: definition.namespace,
       key: definition.key,
       type: definition.type.name,
-      value: definition.type.name === "url"
-        ? normalizeUrlMetafieldValue(value, name)
-        : String(value),
+      value: outValue,
     });
   });
   if (profileImageId) {
