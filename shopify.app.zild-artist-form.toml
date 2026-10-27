@@ -1,0 +1,29 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "b01b81d7894729994eaefd5a1ef6a07e"
+application_url = "https://zild-artist-form.onrender.com"
+embedded = true
+name = "Zildjian Artist Form"
+
+[webhooks]
+api_version = "2027-01"
+
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/app/uninstalled"
+  topics = [ "app/uninstalled" ]
+
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/app/scopes_update"
+  topics = [ "app/scopes_update" ]
+
+[app_proxy]
+url = "https://zild-artist-form.onrender.com"
+subpath = "artist-form"
+prefix = "apps"
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "read_content,read_files,read_products,write_content,write_files,write_products"
+
+[auth]
+redirect_urls = [ "https://zild-artist-form.onrender.com/auth/callback" ]

@@ -1,0 +1,32 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "b01b81d7894729994eaefd5a1ef6a07e"
+name = "Zildjian Artist Form"
+application_url = "https://artistform.zildjian.com"
+embedded = true
+
+[build]
+automatically_update_urls_on_dev = false
+
+[webhooks]
+api_version = "2027-01"
+
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/app/uninstalled"
+  topics = [ "app/uninstalled" ]
+
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/app/scopes_update"
+  topics = [ "app/scopes_update" ]
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "read_products,write_products,read_content,write_content,read_files,write_files"
+
+[auth]
+redirect_urls = [ "https://artistform.zildjian.com/auth/callback" ]
+
+[app_proxy]
+url = "https://artistform.zildjian.com"
+subpath = "artist-form"
+prefix = "apps"
