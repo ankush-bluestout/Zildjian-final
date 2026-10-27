@@ -226,6 +226,8 @@ function buildMetafields(d, definitions, setupImageId, profileImageId) {
     .filter((product) => product && product.title)
     .map((product) => `${product.title}${product.sku ? ` (${product.sku})` : ""}`)
     .join("\n");
+
+    
   const definitionValues = [
     ["Affiliation", d.band],
     ["Artist Type", d.artistType],
