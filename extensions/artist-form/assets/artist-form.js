@@ -93,138 +93,163 @@
   var SEARCH_THRESHOLD = 8;
   var openDropdown = null;
 
-  function buildCustomSelect(sel) {
-    if (sel.dataset.cfDone) return;
-    sel.dataset.cfDone = "1";
+function buildCustomSelect(sel) {
+  if (sel.dataset.cfDone) return;
+  sel.dataset.cfDone = "1";
 
-    var opts = Array.prototype.map.call(sel.options, function (o) {
-      return { value: o.value, label: o.textContent, placeholder: (o.value === "") };
+  var multi = sel.multiple;
+  var opts = Array.prototype.map.call(sel.options, function (o) {
+    return { value: o.value, label: o.textContent, placeholder: (o.value === "") };
+  });
+  var placeholderLabel = sel.dataset.placeholder
+    || ((opts[0] && opts[0].placeholder) ? opts[0].label : "Select an option...");
+  var realOpts = opts.filter(function (o) { return !o.placeholder; });
+  var searchable = realOpts.length > SEARCH_THRESHOLD || sel.dataset.searchable === "true";
+
+  function isSelected(v) {
+    return multi
+      ? Array.prototype.some.call(sel.selectedOptions, function (o) { return o.value === v; })
+      : sel.value === v;
+  }
+
+  var wrap = document.createElement("div");
+  wrap.className = "cf-select";
+
+  var btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "cf-trigger field-input";
+  var labelSpan = document.createElement("span");
+  labelSpan.className = "cf-value placeholder";
+  labelSpan.textContent = placeholderLabel;
+  btn.appendChild(labelSpan);
+  var caret = document.createElement("span");
+  caret.className = "cf-caret";
+  caret.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+  btn.appendChild(caret);
+  wrap.appendChild(btn);
+
+  var panel = document.createElement("div");
+  panel.className = "cf-panel";
+  panel.hidden = true;
+
+  var searchInput = null;
+  if (searchable) {
+    var searchWrap = document.createElement("div");
+    searchWrap.className = "cf-search";
+    searchWrap.innerHTML = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M6.41667 11.0833C8.994 11.0833 11.0833 8.994 11.0833 6.41667C11.0833 3.83934 8.994 1.75 6.41667 1.75C3.83934 1.75 1.75 3.83934 1.75 6.41667C1.75 8.994 3.83934 11.0833 6.41667 11.0833Z" stroke="#000000" stroke-width="1.16667"/><path d="M12.2499 12.25L9.7124 9.71252" stroke="#000000" stroke-width="1.16667"/></svg>';
+    searchInput = document.createElement("input");
+    searchInput.type = "text";
+    searchInput.className = "cf-search-input";
+    searchInput.placeholder = "Search...";
+    searchWrap.appendChild(searchInput);
+    panel.appendChild(searchWrap);
+  }
+
+  var ul = document.createElement("ul");
+  ul.className = "cf-options";
+  panel.appendChild(ul);
+  wrap.appendChild(panel);
+
+  function renderOptions(filter) {
+    ul.innerHTML = "";
+    var f = (filter || "").toLowerCase();
+    var shown = realOpts.filter(function (o) {
+      return !f || o.label.toLowerCase().indexOf(f) !== -1;
     });
-    var placeholderLabel = (opts[0] && opts[0].placeholder) ? opts[0].label : "Select an option...";
-    var realOpts = opts.filter(function (o) { return !o.placeholder; });
-   var searchable = realOpts.length > SEARCH_THRESHOLD || sel.dataset.searchable === "true";
-
-    var wrap = document.createElement("div");
-    wrap.className = "cf-select";
-
-    var btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "cf-trigger field-input";
-    var labelSpan = document.createElement("span");
-    labelSpan.className = "cf-value placeholder";
-    labelSpan.textContent = placeholderLabel;
-    btn.appendChild(labelSpan);
-    var caret = document.createElement("span");
-    caret.className = "cf-caret";
-    caret.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#000000  " stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
-    btn.appendChild(caret);
-    wrap.appendChild(btn);
-
-    var panel = document.createElement("div");
-    panel.className = "cf-panel";
-    panel.hidden = true;
-
-    var searchInput = null;
-    if (searchable) {
-      var searchWrap = document.createElement("div");
-      searchWrap.className = "cf-search";
-      searchWrap.innerHTML = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M6.41667 11.0833C8.994 11.0833 11.0833 8.994 11.0833 6.41667C11.0833 3.83934 8.994 1.75 6.41667 1.75C3.83934 1.75 1.75 3.83934 1.75 6.41667C1.75 8.994 3.83934 11.0833 6.41667 11.0833Z" stroke="#000000" stroke-width="1.16667"/><path d="M12.2499 12.25L9.7124 9.71252" stroke="#000000" stroke-width="1.16667"/></svg>';
-      searchInput = document.createElement("input");
-      searchInput.type = "text";
-      searchInput.className = "cf-search-input";
-      searchInput.placeholder = "Search...";
-      searchWrap.appendChild(searchInput);
-      panel.appendChild(searchWrap);
+    if (shown.length === 0) {
+      var empty = document.createElement("li");
+      empty.className = "cf-empty";
+      empty.textContent = "No matches";
+      ul.appendChild(empty);
+      return;
     }
-
-    var ul = document.createElement("ul");
-    ul.className = "cf-options";
-    panel.appendChild(ul);
-    wrap.appendChild(panel);
-
-    function renderOptions(filter) {
-      ul.innerHTML = "";
-      var f = (filter || "").toLowerCase();
-      var shown = realOpts.filter(function (o) {
-        return !f || o.label.toLowerCase().indexOf(f) !== -1;
-      });
-      if (shown.length === 0) {
-        var empty = document.createElement("li");
-        empty.className = "cf-empty";
-        empty.textContent = "No matches";
-        ul.appendChild(empty);
-        return;
+    shown.forEach(function (o) {
+      var on = isSelected(o.value);
+      var li = document.createElement("li");
+      li.className = "cf-option" + (on ? " selected" : "") + (multi ? " multi" : "");
+      li.setAttribute("data-value", o.value);
+      li.setAttribute("role", "option");
+      var txt = document.createElement("span");
+      txt.className = "cf-option-label";
+      txt.textContent = o.label;
+      li.appendChild(txt);
+      if (on) {
+        var chk = document.createElement("span");
+        chk.className = "cf-check";
+        chk.innerHTML = '✓';
+        li.appendChild(chk);
       }
-      shown.forEach(function (o) {
-        var li = document.createElement("li");
-        li.className = "cf-option" + (sel.value === o.value ? " selected" : "");
-        li.setAttribute("data-value", o.value);
-        li.setAttribute("role", "option");
-        var txt = document.createElement("span");
-        txt.className = "cf-option-label";
-        txt.textContent = o.label;
-        li.appendChild(txt);
-        if (sel.value === o.value) {
-          var chk = document.createElement("span");
-          chk.className = "cf-check";
-          chk.innerHTML = '✓   ';
-          li.appendChild(chk);
-        }
-        li.addEventListener("click", function () { choose(o); });
-        ul.appendChild(li);
+      li.addEventListener("click", function () { choose(o); });
+      ul.appendChild(li);
+    });
+  }
+
+  function setLabel() {
+    if (multi) {
+      var labels = realOpts.filter(function (o) { return isSelected(o.value); })
+        .map(function (o) { return o.label; });
+      labelSpan.textContent = labels.length ? labels.join(", ") : placeholderLabel;
+      labelSpan.classList.toggle("placeholder", !labels.length);
+      return;
+    }
+    if (sel.value) {
+      var match = realOpts.filter(function (o) { return o.value === sel.value; })[0];
+      labelSpan.textContent = match ? match.label : sel.value;
+      labelSpan.classList.remove("placeholder");
+    } else {
+      labelSpan.textContent = placeholderLabel;
+      labelSpan.classList.add("placeholder");
+    }
+  }
+
+  function choose(o) {
+    if (multi) {
+      Array.prototype.forEach.call(sel.options, function (opt) {
+        if (opt.value === o.value) opt.selected = !opt.selected;
       });
-    }
-
-    function setLabel() {
-      if (sel.value) {
-        var match = realOpts.filter(function (o) { return o.value === sel.value; })[0];
-        labelSpan.textContent = match ? match.label : sel.value;
-        labelSpan.classList.remove("placeholder");
-      } else {
-        labelSpan.textContent = placeholderLabel;
-        labelSpan.classList.add("placeholder");
-      }
-    }
-
-    function choose(o) {
-      sel.value = o.value;
       sel.dispatchEvent(new Event("change", { bubbles: true }));
       setLabel();
-      close();
+      renderOptions(searchInput ? searchInput.value.trim() : "");  // dropdown open rehta hai
+      return;
     }
-
-    function open() {
-      if (openDropdown && openDropdown !== wrap) openDropdown.__cfClose();
-      panel.hidden = false;
-      wrap.classList.add("open");
-      openDropdown = wrap;
-      renderOptions("");
-      if (searchInput) { searchInput.value = ""; setTimeout(function () { searchInput.focus(); }, 0); }
-    }
-    function close() {
-      panel.hidden = true;
-      wrap.classList.remove("open");
-      if (openDropdown === wrap) openDropdown = null;
-    }
-    wrap.__cfClose = close;
-
-    btn.addEventListener("click", function (e) {
-      e.preventDefault();
-      if (panel.hidden) open(); else close();
-    });
-
-    if (searchInput) {
-      searchInput.addEventListener("input", function () { renderOptions(searchInput.value.trim()); });
-      searchInput.addEventListener("keydown", function (e) { if (e.key === "Escape") { close(); btn.focus(); } });
-    }
-
-    sel.addEventListener("change", function () { setLabel(); });
-    if (form) form.addEventListener("reset", function () { setTimeout(function () { setLabel(); }, 0); });
-
-    sel.classList.add("cf-native-hidden");
-    sel.parentNode.insertBefore(wrap, sel.nextSibling);
+    sel.value = o.value;
+    sel.dispatchEvent(new Event("change", { bubbles: true }));
     setLabel();
+    close();
   }
+
+  function open() {
+    if (openDropdown && openDropdown !== wrap) openDropdown.__cfClose();
+    panel.hidden = false;
+    wrap.classList.add("open");
+    openDropdown = wrap;
+    renderOptions("");
+    if (searchInput) { searchInput.value = ""; setTimeout(function () { searchInput.focus(); }, 0); }
+  }
+  function close() {
+    panel.hidden = true;
+    wrap.classList.remove("open");
+    if (openDropdown === wrap) openDropdown = null;
+  }
+  wrap.__cfClose = close;
+
+  btn.addEventListener("click", function (e) {
+    e.preventDefault();
+    if (panel.hidden) open(); else close();
+  });
+
+  if (searchInput) {
+    searchInput.addEventListener("input", function () { renderOptions(searchInput.value.trim()); });
+    searchInput.addEventListener("keydown", function (e) { if (e.key === "Escape") { close(); btn.focus(); } });
+  }
+
+  sel.addEventListener("change", function () { setLabel(); });
+  if (form) form.addEventListener("reset", function () { setTimeout(function () { setLabel(); }, 0); });
+
+  sel.classList.add("cf-native-hidden");
+  sel.parentNode.insertBefore(wrap, sel.nextSibling);
+  setLabel();
+}
 
   form.querySelectorAll('select.field-input').forEach(buildCustomSelect);
 
@@ -568,23 +593,67 @@
 
   /* ---------------- photo uploads ---------------- */
   root.querySelectorAll(".upload-box").forEach(function (box) {
-    var key = box.dataset.upload;
-    var input = box.querySelector(".upload-input");
-    var fileText = box.querySelector(".upload-file");
-    box.addEventListener("click", function () { input.click(); });
-    input.addEventListener("change", function () {
-      var f = input.files && input.files[0];
-      files[key] = f || null;
-      if (fileText) fileText.textContent = f ? f.name : "";
-      box.classList.toggle("has-file", !!f);
-      if (f) {
-        box.classList.remove("invalid");
-        var grp = box.closest(".field-group");
-        if (grp) grp.classList.remove("invalid");
-        clearFieldError(box);
-      }
+  var key = box.dataset.upload;
+  var input = box.querySelector(".upload-input");
+  var fileText = box.querySelector(".upload-file");
+
+  function setFile(f) {
+    files[key] = f || null;
+    if (fileText) fileText.textContent = f ? f.name : "";
+    box.classList.toggle("has-file", !!f);
+    if (f) {
+      box.classList.remove("invalid");
+      var grp = box.closest(".field-group");
+      if (grp) grp.classList.remove("invalid");
+      clearFieldError(box);
+    }
+  }
+
+  box.addEventListener("click", function (e) {
+    if (e.target === input) return;
+    input.click();
+  });
+  input.addEventListener("change", function () {
+    setFile(input.files && input.files[0]);
+  });
+
+  // ---- drag & drop ----
+  ["dragenter", "dragover"].forEach(function (ev) {
+    box.addEventListener(ev, function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      box.classList.add("dragover");
     });
   });
+  box.addEventListener("dragleave", function (e) {
+    if (box.contains(e.relatedTarget)) return;
+    box.classList.remove("dragover");
+  });
+  box.addEventListener("drop", function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    box.classList.remove("dragover");
+    var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (!f) return;
+    if (!/^image\//i.test(f.type)) {
+      fieldError(box, WARN + "Please drop an image file (JPG, PNG, TIFF).");
+      return;
+    }
+    try {
+      var dt = new DataTransfer();
+      dt.items.add(f);
+      input.files = dt.files;
+    } catch (err) { /* purane browsers: files[key] phir bhi set ho jayega */ }
+    setFile(f);
+  });
+});
+
+// box ke bahar file drop ho to browser file open na kare
+["dragover", "drop"].forEach(function (ev) {
+  window.addEventListener(ev, function (e) {
+    if (!e.target.closest || !e.target.closest(".upload-box")) e.preventDefault();
+  });
+});
 
   function toDataUrl(file) {
     return new Promise(function (resolve, reject) {
@@ -627,7 +696,7 @@
       ["name",          WARN + "Please fill out this field."],
       ["band",          WARN + "Please fill out this field."],
       ["artistType",    WARN + "Please select an artist type."],
-      ["role",          WARN + "Please select an option."],
+      // ["role",          WARN + "Please select an option."],
       ["country",       WARN + "Please select your country."],
       ["quote",         WARN + "Please share your Zildjian quote."],
     ];
@@ -767,7 +836,7 @@
       try {
         var fd = new FormData(form);
         var payload = Object.fromEntries(fd.entries());
-
+        payload.artistType = fd.getAll("artistType");
         
         payload.cymbals = (selected.cymbals || []).map(function (p) {
           return { id: p.id, title: p.title, sku: p.sku };

@@ -160,27 +160,6 @@
 //   }
 // }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /**
  * app/routes/submit.jsx  (SERVER ONLY — no document/window)
  *
@@ -219,18 +198,34 @@ function normalizeUrlMetafieldValue(value, name) {
 function buildMetafields(d, definitions, setupImageId, profileImageId) {
   const NS = "artist";
   const mf = [];
-  const text = (key, val) => { if (val) mf.push({ namespace: NS, key, type: "single_line_text_field", value: String(val) }); };
-  if (d.quote) mf.push({ namespace: NS, key: "quote", type: "multi_line_text_field", value: String(d.quote) });
+  const text = (key, val) => {
+    if (val)
+      mf.push({
+        namespace: NS,
+        key,
+        type: "single_line_text_field",
+        value: String(val),
+      });
+  };
+  if (d.quote)
+    mf.push({
+      namespace: NS,
+      key: "quote",
+      type: "multi_line_text_field",
+      value: String(d.quote),
+    });
   text("tiktok", d.tiktok);
   const cymbalSetup = (d.cymbals || [])
     .filter((product) => product && product.title)
-    .map((product) => `${product.title}${product.sku ? ` (${product.sku})` : ""}`)
+    .map(
+      (product) => `${product.title}${product.sku ? ` (${product.sku})` : ""}`,
+    )
     .join("\n");
 
   const definitionValues = [
     ["Affiliation", d.band],
     ["Artist Type", d.artistType],
-    ["Educator or Performer", d.role],
+    // ["Educator or Performer", d.role],
     ["country", d.country],
     ["Website", d.website],
     ["Instagram", d.instagram],
@@ -243,17 +238,34 @@ function buildMetafields(d, definitions, setupImageId, profileImageId) {
   ];
   definitionValues.forEach(([name, value]) => {
     if (!value) return;
-    const matches = definitions.filter((definition) => definition.name.toLowerCase() === name.toLowerCase());
+    const matches = definitions.filter(
+      (definition) => definition.name.toLowerCase() === name.toLowerCase(),
+    );
     if (matches.length !== 1) {
-      throw new Error(`Expected one blog post metafield definition named "${name}", found ${matches.length}.`);
+      throw new Error(
+        `Expected one blog post metafield definition named "${name}", found ${matches.length}.`,
+      );
     }
     const definition = matches[0];
     let outValue = String(value);
+    if (Array.isArray(value)) {
+      if (!value.length) return;
+      outValue = definition.type.name.startsWith("list.")
+        ? JSON.stringify(value)
+        : value.join(", ");
+    }
     if (definition.type.name.includes("product_reference")) {
-      const toProductGid = (id) => (String(id).startsWith("gid://") ? String(id) : `gid://shopify/Product/${id}`);
-      const ids = (d.cymbals || []).filter((p) => p && !p.manual && p.id).map((p) => toProductGid(p.id));
+      const toProductGid = (id) =>
+        String(id).startsWith("gid://")
+          ? String(id)
+          : `gid://shopify/Product/${id}`;
+      const ids = (d.cymbals || [])
+        .filter((p) => p && !p.manual && p.id)
+        .map((p) => toProductGid(p.id));
       if (!ids.length) return;
-      outValue = definition.type.name.startsWith("list.") ? JSON.stringify(ids) : ids[0];
+      outValue = definition.type.name.startsWith("list.")
+        ? JSON.stringify(ids)
+        : ids[0];
     } else if (definition.type.name === "url") {
       outValue = normalizeUrlMetafieldValue(value, name);
     }
@@ -271,7 +283,9 @@ function buildMetafields(d, definitions, setupImageId, profileImageId) {
     if (matches.length === 1) {
       const definition = matches[0];
       if (definition.type.name !== "file_reference") {
-        throw new Error(`"Featured Banner Image" must be a file metafield, found "${definition.type.name}".`);
+        throw new Error(
+          `"Featured Banner Image" must be a file metafield, found "${definition.type.name}".`,
+        );
       }
       mf.push({
         namespace: definition.namespace,
@@ -288,7 +302,9 @@ function buildMetafields(d, definitions, setupImageId, profileImageId) {
     if (matches.length === 1) {
       const definition = matches[0];
       if (definition.type.name !== "file_reference") {
-        throw new Error(`"Cymbal Setup Image" must be a file metafield, found "${definition.type.name}".`);
+        throw new Error(
+          `"Cymbal Setup Image" must be a file metafield, found "${definition.type.name}".`,
+        );
       }
       mf.push({
         namespace: definition.namespace,
@@ -303,15 +319,23 @@ function buildMetafields(d, definitions, setupImageId, profileImageId) {
   text("setup_credit", d.setupCredit);
   text("setup_rights", d.setupRights);
 
-  const toGid = (id) => (String(id).startsWith("gid://") ? String(id) : `gid://shopify/Product/${id}`);
-  const gotoIds = (d.gotos || []).map((p) => p.id).filter(Boolean).map(toGid);
+  const toGid = (id) =>
+    String(id).startsWith("gid://")
+      ? String(id)
+      : `gid://shopify/Product/${id}`;
+  const gotoIds = (d.gotos || [])
+    .map((p) => p.id)
+    .filter(Boolean)
+    .map(toGid);
 
   if (gotoIds.length) {
     const gotoDefinitions = definitions.filter(
       (definition) => definition.name.toLowerCase() === "go-to products",
     );
     if (gotoDefinitions.length !== 1) {
-      throw new Error(`Expected one blog post metafield definition named "Go-To Products", found ${gotoDefinitions.length}.`);
+      throw new Error(
+        `Expected one blog post metafield definition named "Go-To Products", found ${gotoDefinitions.length}.`,
+      );
     }
     const definition = gotoDefinitions[0];
     mf.push({
@@ -326,7 +350,12 @@ function buildMetafields(d, definitions, setupImageId, profileImageId) {
     .filter((p) => p && p.manual && p.title)
     .map((p) => String(p.title));
   if (manualCymbals.length) {
-    mf.push({ namespace: NS, key: "cymbal_setup_manual", type: "list.single_line_text_field", value: JSON.stringify(manualCymbals) });
+    mf.push({
+      namespace: NS,
+      key: "cymbal_setup_manual",
+      type: "list.single_line_text_field",
+      value: JSON.stringify(manualCymbals),
+    });
   }
   return mf;
 }
@@ -338,14 +367,15 @@ async function getArticleMetafieldDefinitions(admin) {
        metafieldDefinitions(ownerType: ARTICLE, first: 250) {
          nodes { name namespace key type { name } }
        }
-     }`
+     }`,
   );
   const json = await response.json();
   if (json.errors?.length) {
     throw new Error(json.errors.map((error) => error.message).join("; "));
   }
   const definitions = json.data?.metafieldDefinitions?.nodes;
-  if (!definitions) throw new Error("Shopify returned no blog post metafield definitions.");
+  if (!definitions)
+    throw new Error("Shopify returned no blog post metafield definitions.");
   return definitions;
 }
 
@@ -382,15 +412,17 @@ async function uploadImage(admin, photo) {
      }`,
     {
       variables: {
-        input: [{
-          filename,
-          mimeType,
-          httpMethod: "POST",
-          resource: "FILE",
-          fileSize: String(bytes.length),
-        }],
+        input: [
+          {
+            filename,
+            mimeType,
+            httpMethod: "POST",
+            resource: "FILE",
+            fileSize: String(bytes.length),
+          },
+        ],
       },
-    }
+    },
   );
   const stagedJson = await stagedRes.json();
   if (stagedJson.errors?.length) {
@@ -398,18 +430,25 @@ async function uploadImage(admin, photo) {
   }
   const stagedPayload = stagedJson.data?.stagedUploadsCreate;
   if (stagedPayload?.userErrors?.length) {
-    throw new Error(stagedPayload.userErrors.map((error) => error.message).join("; "));
+    throw new Error(
+      stagedPayload.userErrors.map((error) => error.message).join("; "),
+    );
   }
   const target = stagedPayload?.stagedTargets?.[0];
-  if (!target) throw new Error("Shopify did not return a staged upload target.");
+  if (!target)
+    throw new Error("Shopify did not return a staged upload target.");
 
   const fd = new FormData();
-  (target.parameters || []).forEach((parameter) => fd.append(parameter.name, parameter.value));
+  (target.parameters || []).forEach((parameter) =>
+    fd.append(parameter.name, parameter.value),
+  );
   fd.append("file", new Blob([bytes], { type: mimeType }), filename);
   const upload = await fetch(target.url, { method: "POST", body: fd });
   log("IMG: staged POST status =", upload.status);
   if (!upload.ok) {
-    throw new Error(`Shopify staged image upload failed with status ${upload.status}.`);
+    throw new Error(
+      `Shopify staged image upload failed with status ${upload.status}.`,
+    );
   }
 
   const fileRes = await admin.graphql(
@@ -420,7 +459,17 @@ async function uploadImage(admin, photo) {
          userErrors { field message }
        }
      }`,
-    { variables: { files: [{ alt: filename, contentType: "IMAGE", originalSource: target.resourceUrl }] } }
+    {
+      variables: {
+        files: [
+          {
+            alt: filename,
+            contentType: "IMAGE",
+            originalSource: target.resourceUrl,
+          },
+        ],
+      },
+    },
   );
   const fileJson = await fileRes.json();
   if (fileJson.errors?.length) {
@@ -428,10 +477,13 @@ async function uploadImage(admin, photo) {
   }
   const filePayload = fileJson.data?.fileCreate;
   if (filePayload?.userErrors?.length) {
-    throw new Error(filePayload.userErrors.map((error) => error.message).join("; "));
+    throw new Error(
+      filePayload.userErrors.map((error) => error.message).join("; "),
+    );
   }
   const file = filePayload?.files?.[0];
-  if (!file?.id) throw new Error("Shopify did not create the uploaded image file.");
+  if (!file?.id)
+    throw new Error("Shopify did not create the uploaded image file.");
 
   let url = file.image?.url || null;
   if (!url) {
@@ -442,11 +494,13 @@ async function uploadImage(admin, photo) {
          query FileUrl($id: ID!) {
            node(id: $id) { ... on MediaImage { image { url } fileStatus } }
          }`,
-        { variables: { id: file.id } }
+        { variables: { id: file.id } },
       );
       const checkJson = await check.json();
       if (checkJson.errors?.length) {
-        throw new Error(checkJson.errors.map((error) => error.message).join("; "));
+        throw new Error(
+          checkJson.errors.map((error) => error.message).join("; "),
+        );
       }
       url = checkJson.data?.node?.image?.url || null;
       log("IMG: poll", i, "url =", url);
@@ -460,7 +514,10 @@ export async function action({ request }) {
   log("STEP 0: action entered, method =", request.method);
 
   if (request.method !== "POST") {
-    return Response.json({ ok: false, error: "Method not allowed" }, { status: 405 });
+    return Response.json(
+      { ok: false, error: "Method not allowed" },
+      { status: 405 },
+    );
   }
 
   let admin, session;
@@ -471,7 +528,8 @@ export async function action({ request }) {
     // Offline tokens expire (~1h). unauthenticated.admin() loads the stored
     // offline session and refreshes it with the refresh token when expired,
     // so submits keep working without opening the app in the admin.
-    const shop = ctx.session?.shop || new URL(request.url).searchParams.get("shop");
+    const shop =
+      ctx.session?.shop || new URL(request.url).searchParams.get("shop");
     if (shop) {
       try {
         const fresh = await unauthenticated.admin(shop);
@@ -484,23 +542,46 @@ export async function action({ request }) {
     log("STEP 1 done. admin?", !!admin, "shop:", session?.shop);
   } catch (e) {
     log("STEP 1 FAILED:", e?.message);
-    return Response.json({ ok: false, error: "appProxy auth failed: " + (e?.message || e) }, { status: 500 });
+    return Response.json(
+      { ok: false, error: "appProxy auth failed: " + (e?.message || e) },
+      { status: 500 },
+    );
   }
 
   if (!admin) {
-    return Response.json({ ok: false, error: "App not installed for this shop (admin undefined)." }, { status: 401 });
+    return Response.json(
+      {
+        ok: false,
+        error: "App not installed for this shop (admin undefined).",
+      },
+      { status: 401 },
+    );
   }
 
   let d;
   try {
     d = await request.json();
-    log("STEP 2 done. name =", d?.name, "hasProfilePhoto?", !!(d?.profilePhoto && d.profilePhoto.dataUrl));
+    log(
+      "STEP 2 done. name =",
+      d?.name,
+      "hasProfilePhoto?",
+      !!(d?.profilePhoto && d.profilePhoto.dataUrl),
+    );
   } catch (e) {
     log("STEP 2 FAILED:", e?.message);
-    return Response.json({ ok: false, error: "Bad JSON body: " + (e?.message || e) }, { status: 400 });
+    return Response.json(
+      { ok: false, error: "Bad JSON body: " + (e?.message || e) },
+      { status: 400 },
+    );
   }
   if (!d.profilePhoto?.dataUrl || !d.setupPhoto?.dataUrl) {
-    return Response.json({ ok: false, error: "Please include both the profile photo and setup photo." }, { status: 400 });
+    return Response.json(
+      {
+        ok: false,
+        error: "Please include both the profile photo and setup photo.",
+      },
+      { status: 400 },
+    );
   }
 
   let BLOG_ID = process.env.SHOPIFY_BLOG_ID;
@@ -508,7 +589,7 @@ export async function action({ request }) {
     if (!BLOG_ID) {
       const blogRes = await admin.graphql(
         `#graphql
-         query GetFirstBlog { blogs(first: 1) { nodes { id title } } }`
+         query GetFirstBlog { blogs(first: 1) { nodes { id title } } }`,
       );
       const blogJson = await blogRes.json();
       BLOG_ID = blogJson.data?.blogs?.nodes?.[0]?.id || null;
@@ -516,11 +597,17 @@ export async function action({ request }) {
     log("STEP 3 done. BLOG_ID =", BLOG_ID);
   } catch (e) {
     log("STEP 3 FAILED:", e?.message);
-    return Response.json({ ok: false, error: "blog lookup failed: " + (e?.message || e) }, { status: 500 });
+    return Response.json(
+      { ok: false, error: "blog lookup failed: " + (e?.message || e) },
+      { status: 500 },
+    );
   }
 
   if (!BLOG_ID) {
-    return Response.json({ ok: false, error: "No blog found. Create one in Content -> Blogs." }, { status: 500 });
+    return Response.json(
+      { ok: false, error: "No blog found. Create one in Content -> Blogs." },
+      { status: 500 },
+    );
   }
 
   let metafieldDefinitions;
@@ -528,7 +615,15 @@ export async function action({ request }) {
     metafieldDefinitions = await getArticleMetafieldDefinitions(admin);
   } catch (e) {
     log("STEP 3.2 FAILED: metafield definition lookup:", e?.message);
-    return Response.json({ ok: false, error: "Could not load blog post metafield definitions: " + (e?.message || e) }, { status: 500 });
+    return Response.json(
+      {
+        ok: false,
+        error:
+          "Could not load blog post metafield definitions: " +
+          (e?.message || e),
+      },
+      { status: 500 },
+    );
   }
 
   let image;
@@ -540,7 +635,13 @@ export async function action({ request }) {
     setupImage = await uploadImage(admin, d.setupPhoto);
   } catch (e) {
     log("IMAGE UPLOAD FAILED:", e?.message);
-    return Response.json({ ok: false, error: "Could not upload submitted images: " + (e?.message || e) }, { status: 502 });
+    return Response.json(
+      {
+        ok: false,
+        error: "Could not upload submitted images: " + (e?.message || e),
+      },
+      { status: 502 },
+    );
   }
 
   try {
@@ -553,12 +654,20 @@ export async function action({ request }) {
       tags: ["artist-profile", "draft-submission"],
       isPublished: false,
       templateSuffix: "artist",
-      metafields: buildMetafields(d, metafieldDefinitions, setupImage.id, image.id),
+      metafields: buildMetafields(
+        d,
+        metafieldDefinitions,
+        setupImage.id,
+        image.id,
+      ),
     };
     if (image && image.url) {
       article.image = { url: image.url, altText: `${d.name} profile photo` };
     }
-    log("STEP 4: articleCreate", image?.url ? "WITH image " + image.url : "NO image");
+    log(
+      "STEP 4: articleCreate",
+      image?.url ? "WITH image " + image.url : "NO image",
+    );
 
     const res = await admin.graphql(
       `#graphql
@@ -568,18 +677,28 @@ export async function action({ request }) {
            userErrors { field message code }
          }
        }`,
-      { variables: { article } }
+      { variables: { article } },
     );
     const json = await res.json();
     log("STEP 4 response:", JSON.stringify(json));
 
     const payload = json.data?.articleCreate;
     if (!payload) {
-      return Response.json({ ok: false, error: "articleCreate returned no data: " + JSON.stringify(json.errors || json) }, { status: 500 });
+      return Response.json(
+        {
+          ok: false,
+          error:
+            "articleCreate returned no data: " +
+            JSON.stringify(json.errors || json),
+        },
+        { status: 500 },
+      );
     }
     if (payload.userErrors?.length) {
       // if the image field was the problem, retry WITHOUT it so the post still saves
-      const imgErr = payload.userErrors.some((e) => (e.field || []).join(".").includes("image"));
+      const imgErr = payload.userErrors.some((e) =>
+        (e.field || []).join(".").includes("image"),
+      );
       if (imgErr && article.image) {
         log("STEP 4b: image field rejected, retrying without image");
         delete article.image;
@@ -591,7 +710,7 @@ export async function action({ request }) {
                userErrors { field message code }
              }
            }`,
-          { variables: { article } }
+          { variables: { article } },
         );
         const json2 = await res2.json();
         log("STEP 4b response:", JSON.stringify(json2));
@@ -599,20 +718,52 @@ export async function action({ request }) {
         if (p2 && !p2.userErrors?.length) {
           const created2 = p2.article;
           const numericId2 = created2.id.split("/").pop();
-          const adminUrl2 = session?.shop ? `https://${session.shop}/admin/articles/${numericId2}` : null;
-          return Response.json({ ok: true, articleId: created2.id, handle: created2.handle, adminUrl: adminUrl2, imageWarning: "Image could not be attached." });
+          const adminUrl2 = session?.shop
+            ? `https://${session.shop}/admin/articles/${numericId2}`
+            : null;
+          return Response.json({
+            ok: true,
+            articleId: created2.id,
+            handle: created2.handle,
+            adminUrl: adminUrl2,
+            imageWarning: "Image could not be attached.",
+          });
         }
       }
-      return Response.json({ ok: false, error: payload.userErrors.map((e) => `${e.field}: ${e.message}`).join("; ") }, { status: 422 });
+      return Response.json(
+        {
+          ok: false,
+          error: payload.userErrors
+            .map((e) => `${e.field}: ${e.message}`)
+            .join("; "),
+        },
+        { status: 422 },
+      );
     }
 
     const created = payload.article;
     const numericId = created.id.split("/").pop();
-    const adminUrl = session?.shop ? `https://${session.shop}/admin/articles/${numericId}` : null;
-    log("STEP 5: SUCCESS", created.id, "image:", created.image?.url || "(none)");
-    return Response.json({ ok: true, articleId: created.id, handle: created.handle, adminUrl, image: created.image?.url || null });
+    const adminUrl = session?.shop
+      ? `https://${session.shop}/admin/articles/${numericId}`
+      : null;
+    log(
+      "STEP 5: SUCCESS",
+      created.id,
+      "image:",
+      created.image?.url || "(none)",
+    );
+    return Response.json({
+      ok: true,
+      articleId: created.id,
+      handle: created.handle,
+      adminUrl,
+      image: created.image?.url || null,
+    });
   } catch (e) {
     log("STEP 4 THREW:", e?.message);
-    return Response.json({ ok: false, error: "articleCreate threw: " + (e?.message || e) }, { status: 500 });
+    return Response.json(
+      { ok: false, error: "articleCreate threw: " + (e?.message || e) },
+      { status: 500 },
+    );
   }
 }

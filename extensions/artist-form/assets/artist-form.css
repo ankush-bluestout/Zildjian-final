@@ -12,6 +12,12 @@
     margin-right: calc(50% - 50vw) !important;
 
             }
+
+.cf-option.multi .cf-check { margin-left: auto; color: #B8860B; }
+  .upload-box.dragover {
+    border-color: #B8860B !important;
+    background: #FBF3DC !important;
+  }
 #artist-form-root a { color: inherit; text-decoration: none; }
 #artist-form-root input, #artist-form-root select,
 #artist-form-root textarea, #artist-form-root button { font-family: 'Inter', sans-serif; }
