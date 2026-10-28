@@ -282,18 +282,17 @@
               <input class="field-input" name="band" type="text" placeholder="e.g. Independent" required>
             </div>
 
-            {% comment %}
               <div class="field-group">
                 <label class="field-label">Artist Type <span class="req">★</span></label>
-                <select class="field-input" name="artistType" required>
+                <select class="field-input" multiple name="artistType" required>
                   <option value="">Sele an option...</option>
-                  <option>Professional</option>
-                  <option>Semi-Professional</option>
-                  <option>Hobbyist</option>
+                  <option>Performer</option>
+                  <option>Educator</option>
+                  <option>Digital influencer</option>
                 </select>
               </div>
-            {% endcomment %}
-            <div class="field-group">
+
+            {% comment %} <div class="field-group">
               <label class="field-label">Are you an Educator or Performer? <span class="req">★</span></label>
               <div class="field-hint">You can select more than one.</div>
               <select class="field-input" name="role" multiple data-placeholder="Select one or more..." required>
@@ -301,9 +300,9 @@
                 <option>Educator</option>
                 <option>Digital influencer</option>
               </select>
-            </div>
+            </div> {% endcomment %}
 
-            <div class="field-group full-field-group">
+            <div class="field-group">
               <label class="field-label">Country <span class="req">★</span></label>
               <select class="field-input" name="country" data-searchable="true" required>
                 <option value="">Select your country...</option>

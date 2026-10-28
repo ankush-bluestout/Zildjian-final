@@ -225,7 +225,7 @@ function buildMetafields(d, definitions, setupImageId, profileImageId) {
   const definitionValues = [
     ["Affiliation", d.band],
     ["Artist Type", d.artistType],
-     ["Educator or Performer", d.role],
+     // ["Educator or Performer", d.role],
     ["country", d.country],
     ["Website", d.website],
     ["Instagram", d.instagram],

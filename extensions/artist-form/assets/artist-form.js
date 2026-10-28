@@ -14,6 +14,7 @@
 
   var proxyUrl = root.dataset.proxyUrl || "/apps/artist-form/submit";
   var searchUrl = root.dataset.searchUrl || "/apps/artist-form/search";
+
   var form = root.querySelector("#artist-form");
   var SECTIONS = ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"];
 
@@ -985,7 +986,6 @@
         var payload = Object.fromEntries(fd.entries());
         payload.artistType = fd.getAll("artistType");
 
-        payload.artistType = fd.getAll("artistType");
         payload.role = fd.getAll("role");
 
         payload.cymbals = (selected.cymbals || []).map(function (p) {
