@@ -552,6 +552,7 @@ export async function action({ request }) {
       summary: d.quote ? String(d.quote).slice(0, 250) : undefined,
       tags: ["artist-profile", "draft-submission"],
       isPublished: false,
+      templateSuffix: "artist",
       metafields: buildMetafields(d, metafieldDefinitions, setupImage.id, image.id),
     };
     if (image && image.url) {

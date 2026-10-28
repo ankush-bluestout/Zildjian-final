@@ -659,8 +659,7 @@
     }
 
     [["profilePhoto", WARN + "Please upload a profile photo."],
-
-
+    
      ["setupPhoto",   WARN + "Please upload a setup photo."]].forEach(function (pair) {
       var box = root.querySelector('.upload-box[data-upload="' + pair[0] + '"]');
       if (!box) return;
