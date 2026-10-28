@@ -191,7 +191,7 @@
  * Heavily logged so the dev-server terminal shows exactly what happens.
  */
 
-import { authenticate } from "../shopify.server";
+import { authenticate, unauthenticated } from "../shopify.server";
 
 function log(...args) {
   console.log("🎯 [artist-form]", ...args);
@@ -227,7 +227,6 @@ function buildMetafields(d, definitions, setupImageId, profileImageId) {
     .map((product) => `${product.title}${product.sku ? ` (${product.sku})` : ""}`)
     .join("\n");
 
-    
   const definitionValues = [
     ["Affiliation", d.band],
     ["Artist Type", d.artistType],
@@ -469,6 +468,19 @@ export async function action({ request }) {
     const ctx = await authenticate.public.appProxy(request);
     admin = ctx.admin;
     session = ctx.session;
+    // Offline tokens expire (~1h). unauthenticated.admin() loads the stored
+    // offline session and refreshes it with the refresh token when expired,
+    // so submits keep working without opening the app in the admin.
+    const shop = ctx.session?.shop || new URL(request.url).searchParams.get("shop");
+    if (shop) {
+      try {
+        const fresh = await unauthenticated.admin(shop);
+        admin = fresh.admin;
+        session = fresh.session;
+      } catch (e) {
+        log("STEP 1 refresh via unauthenticated.admin failed:", e?.message);
+      }
+    }
     log("STEP 1 done. admin?", !!admin, "shop:", session?.shop);
   } catch (e) {
     log("STEP 1 FAILED:", e?.message);
