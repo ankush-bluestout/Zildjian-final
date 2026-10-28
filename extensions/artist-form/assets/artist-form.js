@@ -13,37 +13,37 @@
   root.dataset.enhanced = "1";
 
   var proxyUrl = root.dataset.proxyUrl || "/apps/artist-form/submit";
+  var searchUrl = root.dataset.searchUrl || "/apps/artist-form/search";
   var form = root.querySelector("#artist-form");
   var SECTIONS = ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"];
 
-  var selected = {}; // { cymbals: [...], gotos: [...] }
-  var files = {}; // { profilePhoto: File, setupPhoto: File }
+  var selected = {};   // { cymbals: [...], gotos: [...] }
+  var files = {};      // { profilePhoto: File, setupPhoto: File }
 
   // warning icon injected before each error message
-  var WARN =
-    '<svg class="err-ico" xmlns="http://www.w3.org/2000/svg" width="13" height="14" viewBox="0 0 13 14" fill="none">' +
-    '<path d="M6.50016 12.9166C9.49171 12.9166 11.9168 10.4915 11.9168 7.49998C11.9168 4.50844 9.49171 2.08331 6.50016 2.08331C3.50862 2.08331 1.0835 4.50844 1.0835 7.49998C1.0835 10.4915 3.50862 12.9166 6.50016 12.9166Z" stroke="#C0392B" stroke-width="1.08333"/>' +
-    '<path d="M6.5 5.33331V7.49998" stroke="#C0392B" stroke-width="1.08333"/>' +
-    '<path d="M6.5 9.66669H6.50542" stroke="#C0392B" stroke-width="1.08333"/>' +
-    "</svg> ";
+  var WARN = '<svg class="err-ico" xmlns="http://www.w3.org/2000/svg" width="13" height="14" viewBox="0 0 13 14" fill="none">'
+    + '<path d="M6.50016 12.9166C9.49171 12.9166 11.9168 10.4915 11.9168 7.49998C11.9168 4.50844 9.49171 2.08331 6.50016 2.08331C3.50862 2.08331 1.0835 4.50844 1.0835 7.49998C1.0835 10.4915 3.50862 12.9166 6.50016 12.9166Z" stroke="#C0392B" stroke-width="1.08333"/>'
+    + '<path d="M6.5 5.33331V7.49998" stroke="#C0392B" stroke-width="1.08333"/>'
+    + '<path d="M6.5 9.66669H6.50542" stroke="#C0392B" stroke-width="1.08333"/>'
+    + '</svg> ';
 
   /* ---------------- nav / scroll-spy ---------------- */
   var navLinks = root.querySelectorAll(".sidebar-link, .mobile-tab");
   var tabBar = root.querySelector(".mobile-tabs");
   var clickLock = false;
 
+
   /* keep mobile tabs just below the site's sticky header */
   var siteHeader = document.querySelector(".section-header");
-
+  
   function setHeaderH() {
-    var h = siteHeader
-      ? Math.max(0, siteHeader.getBoundingClientRect().bottom)
-      : 0;
+    var h = siteHeader ? Math.max(0, siteHeader.getBoundingClientRect().bottom) : 0;
     root.style.setProperty("--header-h", h + "px");
   }
   setHeaderH();
   window.addEventListener("resize", setHeaderH);
   window.addEventListener("scroll", setHeaderH, { passive: true });
+
 
   function setActive(id) {
     navLinks.forEach(function (a) {
@@ -53,24 +53,17 @@
       var tab = tabBar.querySelector('.mobile-tab[href="#' + id + '"]');
       if (tab) {
         var bw = tabBar.offsetWidth;
-        tabBar.scrollTo({
-          left: tab.offsetLeft - bw / 2 + tab.offsetWidth / 2,
-          behavior: "smooth",
-        });
+        tabBar.scrollTo({ left: tab.offsetLeft - bw / 2 + tab.offsetWidth / 2, behavior: "smooth" });
       }
     }
   }
 
   function onScroll() {
     if (clickLock) return;
-    if (window.scrollY < 10) {
-      setActive("s1");
-      return;
-    }
+    if (window.scrollY < 10) { setActive("s1"); return; }
     var scrollBottom = window.scrollY + window.innerHeight;
     if (document.documentElement.scrollHeight - scrollBottom < 10) {
-      setActive(SECTIONS[SECTIONS.length - 1]);
-      return;
+      setActive(SECTIONS[SECTIONS.length - 1]); return;
     }
     var offset = window.innerHeight * 0.45;
     var current = SECTIONS[0];
@@ -86,9 +79,7 @@
       var id = (a.getAttribute("href") || "").slice(1);
       setActive(id);
       clickLock = true;
-      setTimeout(function () {
-        clickLock = false;
-      }, 800);
+      setTimeout(function () { clickLock = false; }, 800);
     });
   });
   window.addEventListener("scroll", onScroll, { passive: true });
@@ -107,19 +98,11 @@
     sel.dataset.cfDone = "1";
 
     var opts = Array.prototype.map.call(sel.options, function (o) {
-      return {
-        value: o.value,
-        label: o.textContent,
-        placeholder: o.value === "",
-      };
+      return { value: o.value, label: o.textContent, placeholder: (o.value === "") };
     });
-    var placeholderLabel =
-      opts[0] && opts[0].placeholder ? opts[0].label : "Select an option...";
-    var realOpts = opts.filter(function (o) {
-      return !o.placeholder;
-    });
-    var searchable =
-      realOpts.length > SEARCH_THRESHOLD || sel.dataset.searchable === "true";
+    var placeholderLabel = (opts[0] && opts[0].placeholder) ? opts[0].label : "Select an option...";
+    var realOpts = opts.filter(function (o) { return !o.placeholder; });
+   var searchable = realOpts.length > SEARCH_THRESHOLD || sel.dataset.searchable === "true";
 
     var wrap = document.createElement("div");
     wrap.className = "cf-select";
@@ -133,8 +116,7 @@
     btn.appendChild(labelSpan);
     var caret = document.createElement("span");
     caret.className = "cf-caret";
-    caret.innerHTML =
-      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#000000  " stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+    caret.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#000000  " stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
     btn.appendChild(caret);
     wrap.appendChild(btn);
 
@@ -146,8 +128,7 @@
     if (searchable) {
       var searchWrap = document.createElement("div");
       searchWrap.className = "cf-search";
-      searchWrap.innerHTML =
-        '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M6.41667 11.0833C8.994 11.0833 11.0833 8.994 11.0833 6.41667C11.0833 3.83934 8.994 1.75 6.41667 1.75C3.83934 1.75 1.75 3.83934 1.75 6.41667C1.75 8.994 3.83934 11.0833 6.41667 11.0833Z" stroke="#000000" stroke-width="1.16667"/><path d="M12.2499 12.25L9.7124 9.71252" stroke="#000000" stroke-width="1.16667"/></svg>';
+      searchWrap.innerHTML = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M6.41667 11.0833C8.994 11.0833 11.0833 8.994 11.0833 6.41667C11.0833 3.83934 8.994 1.75 6.41667 1.75C3.83934 1.75 1.75 3.83934 1.75 6.41667C1.75 8.994 3.83934 11.0833 6.41667 11.0833Z" stroke="#000000" stroke-width="1.16667"/><path d="M12.2499 12.25L9.7124 9.71252" stroke="#000000" stroke-width="1.16667"/></svg>';
       searchInput = document.createElement("input");
       searchInput.type = "text";
       searchInput.className = "cf-search-input";
@@ -186,21 +167,17 @@
         if (sel.value === o.value) {
           var chk = document.createElement("span");
           chk.className = "cf-check";
-          chk.innerHTML = "✓   ";
+          chk.innerHTML = '✓   ';
           li.appendChild(chk);
         }
-        li.addEventListener("click", function () {
-          choose(o);
-        });
+        li.addEventListener("click", function () { choose(o); });
         ul.appendChild(li);
       });
     }
 
     function setLabel() {
       if (sel.value) {
-        var match = realOpts.filter(function (o) {
-          return o.value === sel.value;
-        })[0];
+        var match = realOpts.filter(function (o) { return o.value === sel.value; })[0];
         labelSpan.textContent = match ? match.label : sel.value;
         labelSpan.classList.remove("placeholder");
       } else {
@@ -222,12 +199,7 @@
       wrap.classList.add("open");
       openDropdown = wrap;
       renderOptions("");
-      if (searchInput) {
-        searchInput.value = "";
-        setTimeout(function () {
-          searchInput.focus();
-        }, 0);
-      }
+      if (searchInput) { searchInput.value = ""; setTimeout(function () { searchInput.focus(); }, 0); }
     }
     function close() {
       panel.hidden = true;
@@ -238,42 +210,26 @@
 
     btn.addEventListener("click", function (e) {
       e.preventDefault();
-      if (panel.hidden) open();
-      else close();
+      if (panel.hidden) open(); else close();
     });
 
     if (searchInput) {
-      searchInput.addEventListener("input", function () {
-        renderOptions(searchInput.value.trim());
-      });
-      searchInput.addEventListener("keydown", function (e) {
-        if (e.key === "Escape") {
-          close();
-          btn.focus();
-        }
-      });
+      searchInput.addEventListener("input", function () { renderOptions(searchInput.value.trim()); });
+      searchInput.addEventListener("keydown", function (e) { if (e.key === "Escape") { close(); btn.focus(); } });
     }
 
-    sel.addEventListener("change", function () {
-      setLabel();
-    });
-    if (form)
-      form.addEventListener("reset", function () {
-        setTimeout(function () {
-          setLabel();
-        }, 0);
-      });
+    sel.addEventListener("change", function () { setLabel(); });
+    if (form) form.addEventListener("reset", function () { setTimeout(function () { setLabel(); }, 0); });
 
     sel.classList.add("cf-native-hidden");
     sel.parentNode.insertBefore(wrap, sel.nextSibling);
     setLabel();
   }
 
-  form.querySelectorAll("select.field-input").forEach(buildCustomSelect);
+  form.querySelectorAll('select.field-input').forEach(buildCustomSelect);
 
   document.addEventListener("click", function (e) {
-    if (openDropdown && !openDropdown.contains(e.target))
-      openDropdown.__cfClose();
+    if (openDropdown && !openDropdown.contains(e.target)) openDropdown.__cfClose();
   });
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape" && openDropdown) openDropdown.__cfClose();
@@ -288,73 +244,6 @@
     });
   }
 
-  /* ---------------- Shopify /products.json fetch (cached) ---------------- */
-  var productsCache = {}; // { baseUrl: Promise<products[]> }
-
-  async function hubFetchAllProducts(baseUrl) {
-    var allProducts = [],
-      page = 1,
-      done = false;
-    while (!done) {
-      var results = await Promise.all(
-        [page, page + 1, page + 2].map(function (p) {
-          return fetch(baseUrl + "?limit=250&page=" + p)
-            .then(function (r) {
-              return r.json();
-            })
-            .catch(function () {
-              return { products: [] };
-            });
-        }),
-      );
-      results.forEach(function (data) {
-        allProducts.push.apply(allProducts, data.products || []);
-      });
-      if (!results[2].products || !results[2].products.length) done = true;
-      else page += 3;
-    }
-    return allProducts;
-  }
-
-  function getAllProducts(baseUrl) {
-    if (!productsCache[baseUrl]) {
-      productsCache[baseUrl] = hubFetchAllProducts(baseUrl)
-        .then(function (list) {
-          var seen = {};
-          return list
-            .filter(function (p) {
-              if (seen[p.id]) return false;
-              seen[p.id] = 1;
-              return true;
-            })
-            .map(function (p) {
-              var v = (p.variants && p.variants[0]) || {};
-              return {
-                id: String(p.id),
-                title: p.title,
-                sku: v.sku || "",
-                size: "",
-                image: (p.images && p.images[0] && p.images[0].src) || "",
-                _search: (
-                  p.title +
-                  " " +
-                  (v.sku || "") +
-                  " " +
-                  (p.product_type || "") +
-                  " " +
-                  (p.tags || []).join(" ")
-                ).toLowerCase(),
-              };
-            });
-        })
-        .catch(function (e) {
-          delete productsCache[baseUrl]; // retry allow karne ke liye
-          throw e;
-        });
-    }
-    return productsCache[baseUrl];
-  }
-
   /* ---------------- checklist picker with infinite scroll ---------------- */
   var pickerResets = [];
 
@@ -367,43 +256,20 @@
     var cpList = pickerEl.querySelector(".cp-list");
     var cpCount = pickerEl.querySelector(".cp-count");
     var cpClear = pickerEl.querySelector(".cp-clear");
-    var cpChips =
-      pickerEl.querySelector(".cp-selected") ||
-      (pickerEl.parentNode &&
-        pickerEl.parentNode.querySelector(".cp-selected"));
-
-    var PAGE_SIZE = 30;
-    var productsUrl = pickerEl.dataset.productsUrl || "/products.json";
+    var cpChips = pickerEl.querySelector(".cp-selected")
+      || (pickerEl.parentNode && pickerEl.parentNode.querySelector(".cp-selected"));
 
     var state = {
-      term: "",
-      items: [],
-      filtered: [],
-      offset: 0,
-      hasNext: false,
-      loading: false,
-      reqId: 0,
-      started: false,
+      term: "", items: [], cursor: null, hasNext: false,
+      loading: false, reqId: 0, started: false
     };
-
     var typeTimer;
 
-    function isSel(id) {
-      return selected[group].some(function (x) {
-        return x.id === id;
-      });
-    }
-    function updateCount() {
-      if (cpCount) cpCount.textContent = selected[group].length + " selected";
-    }
+    function isSel(id) { return selected[group].some(function (x) { return x.id === id; }); }
+    function updateCount() { if (cpCount) cpCount.textContent = selected[group].length + " selected"; }
     function toggle(p, on) {
-      if (on) {
-        if (!isSel(p.id)) selected[group].push(p);
-      } else {
-        selected[group] = selected[group].filter(function (x) {
-          return x.id !== p.id;
-        });
-      }
+      if (on) { if (!isSel(p.id)) selected[group].push(p); }
+      else { selected[group] = selected[group].filter(function (x) { return x.id !== p.id; }); }
       updateCount();
       renderChips();
       if (selected[group].length > 0) {
@@ -418,10 +284,7 @@
     function renderChips() {
       if (!cpChips) return;
       cpChips.innerHTML = "";
-      if (selected[group].length === 0) {
-        cpChips.hidden = true;
-        return;
-      }
+      if (selected[group].length === 0) { cpChips.hidden = true; return; }
       cpChips.hidden = false;
       selected[group].forEach(function (p) {
         var chip = document.createElement("span");
@@ -470,10 +333,8 @@
       thumb.className = "cp-thumb";
       if (p.image) {
         var img = document.createElement("img");
-        img.src = p.image;
-        img.alt = "";
-        img.loading = "lazy";
-        img.decoding = "async";
+        img.src = p.image; img.alt = "";
+        img.loading = "lazy"; img.decoding = "async";
         thumb.appendChild(img);
       }
       row.appendChild(thumb);
@@ -506,24 +367,16 @@
 
     function appendItems(newItems) {
       var frag = document.createDocumentFragment();
-      newItems.forEach(function (p) {
-        frag.appendChild(makeRow(p));
-      });
+      newItems.forEach(function (p) { frag.appendChild(makeRow(p)); });
       var status = cpList.querySelector(".cp-empty");
       if (status) cpList.insertBefore(frag, status);
       else cpList.appendChild(frag);
     }
 
     function startQuery(term) {
-      state.term = term;
-      state.items = [];
-      state.filtered = [];
-      state.offset = 0;
-      state.hasNext = false;
-      state.loading = false;
-      state.reqId++;
-      cpList.innerHTML = "";
-      cpList.scrollTop = 0;
+      state.term = term; state.items = []; state.cursor = null;
+      state.hasNext = false; state.loading = false; state.reqId++;
+      cpList.innerHTML = ""; cpList.scrollTop = 0;
       loadPage(true);
     }
 
@@ -533,37 +386,23 @@
       state.loading = true;
       var myReq = state.reqId;
       setStatus(isFirst ? "Loading…" : "Loading more…");
-
-      getAllProducts(productsUrl)
-        .then(function (all) {
+      var qs = "?group=" + encodeURIComponent(group);
+      if (state.term.length >= 2) qs += "&q=" + encodeURIComponent(state.term);
+      if (state.cursor) qs += "&after=" + encodeURIComponent(state.cursor);
+      fetch(searchUrl + qs, { headers: { Accept: "application/json" } })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
           if (myReq !== state.reqId) return;
-
-          if (isFirst) {
-            var t = state.term.toLowerCase();
-            state.filtered =
-              state.term.length >= 2
-                ? all.filter(function (p) {
-                    return p._search.indexOf(t) !== -1;
-                  })
-                : all;
-            state.offset = 0;
-          }
-
-          var items = state.filtered.slice(
-            state.offset,
-            state.offset + PAGE_SIZE,
-          );
-          state.offset += items.length;
-          state.hasNext = state.offset < state.filtered.length;
+          var items = (data && data.products) || [];
+          var pi = (data && data.pageInfo) || {};
           state.items = state.items.concat(items);
+          state.cursor = pi.endCursor || null;
+          state.hasNext = !!pi.hasNextPage;
           state.loading = false;
-
           setStatus(null);
           appendItems(items);
           if (state.items.length === 0) {
-            setStatus(
-              state.term.length >= 2 ? "No matches" : "No products found",
-            );
+            setStatus(state.term.length >= 2 ? "No matches" : "No products found");
           }
           maybeAutoFill();
         })
@@ -573,121 +412,96 @@
           setStatus("Couldn't load products.");
         });
     }
+
     function maybeAutoFill() {
-      if (state.hasNext && cpList.scrollHeight <= cpList.clientHeight + 4)
-        loadPage(false);
+      if (state.hasNext && cpList.scrollHeight <= cpList.clientHeight + 4) loadPage(false);
     }
 
-    cpList.addEventListener(
-      "scroll",
-      function () {
-        if (cpList.scrollTop + cpList.clientHeight >= cpList.scrollHeight - 60)
-          loadPage(false);
-      },
-      { passive: true },
-    );
+    cpList.addEventListener("scroll", function () {
+      if (cpList.scrollTop + cpList.clientHeight >= cpList.scrollHeight - 60) loadPage(false);
+    }, { passive: true });
 
     pickerResets.push(function () {
       selected[group] = [];
       if (cpInput) cpInput.value = "";
-      updateCount();
-      renderChips();
-      startQuery("");
+      updateCount(); renderChips(); startQuery("");
     });
 
     if (cpInput) {
       cpInput.addEventListener("input", function () {
         var t = cpInput.value.trim();
         clearTimeout(typeTimer);
-        if (t.length < 2) {
-          startQuery("");
-          return;
-        }
-        typeTimer = setTimeout(function () {
-          startQuery(t);
-        }, 300);
+        if (t.length < 2) { startQuery(""); return; }
+        typeTimer = setTimeout(function () { startQuery(t); }, 300);
       });
     }
     if (cpClear) {
       cpClear.addEventListener("click", function (e) {
         e.preventDefault();
         selected[group] = [];
-        updateCount();
-        renderChips();
-        cpList.querySelectorAll(".cp-check").forEach(function (cb) {
-          cb.checked = false;
-        });
-        cpList.querySelectorAll(".cp-row.selected").forEach(function (r) {
-          r.classList.remove("selected");
-        });
+        updateCount(); renderChips();
+        cpList.querySelectorAll(".cp-check").forEach(function (cb) { cb.checked = false; });
+        cpList.querySelectorAll(".cp-row.selected").forEach(function (r) { r.classList.remove("selected"); });
       });
     }
 
-    renderChips();
-    updateCount();
+    renderChips(); updateCount();
 
     if (mode === "browse") {
       var sectionEl = pickerEl.closest("section") || pickerEl;
       setStatus("Loading…");
       if ("IntersectionObserver" in window) {
-        var io = new IntersectionObserver(
-          function (entries) {
-            entries.forEach(function (en) {
-              if (en.isIntersecting && !state.started) {
-                state.started = true;
-                startQuery("");
-                io.disconnect();
-              }
-            });
-          },
-          { rootMargin: "300px" },
-        );
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (en) {
+            if (en.isIntersecting && !state.started) {
+              state.started = true; startQuery(""); io.disconnect();
+            }
+          });
+        }, { rootMargin: "300px" });
         io.observe(sectionEl);
-      } else {
-        state.started = true;
-        startQuery("");
-      }
+      } else { state.started = true; startQuery(""); }
     } else {
-      state.started = true;
-      startQuery("");
+      state.started = true; startQuery("");
     }
   }
 
   root.querySelectorAll(".cymbal-picker").forEach(initPicker);
 
-  function resetAllPickers() {
-    pickerResets.forEach(function (fn) {
-      fn();
-    });
-  }
+  function resetAllPickers() { pickerResets.forEach(function (fn) { fn(); }); }
 
   /* ---------------- success modal ---------------- */
-  //   var successModal = document.querySelector("[data-success-modal]");
+//   var successModal = document.querySelector("[data-success-modal]");
 
-  //   function openSuccessModal() {
-  //     if (!successModal) return false;
-  //     successModal.hidden = false;
-  //     document.body.style.overflow = "hidden";
-  //     return true;
-  //   }
-  //   function closeSuccessModal() {
-  //     if (!successModal) return;
-  //     successModal.hidden = true;
-  //     document.body.style.overflow = "";
-  //   }
-  //   if (successModal) {
-  //     successModal.addEventListener("click", function (e) {
-  //       if (e.target === successModal) closeSuccessModal();
-  //     });
-  //     document.addEventListener("keydown", function (e) {
-  //       if (e.key === "Escape" && !successModal.hidden) closeSuccessModal();
-  //     });
 
-  //   }
 
-  //  if (successModal && successModal.parentNode !== document.body) {
-  //     document.body.appendChild(successModal);
-  //   }
+//   function openSuccessModal() {
+//     if (!successModal) return false;
+//     successModal.hidden = false;
+//     document.body.style.overflow = "hidden";
+//     return true;
+//   }
+//   function closeSuccessModal() {
+//     if (!successModal) return;
+//     successModal.hidden = true;
+//     document.body.style.overflow = "";
+//   }
+//   if (successModal) {
+//     successModal.addEventListener("click", function (e) {
+//       if (e.target === successModal) closeSuccessModal();
+//     });
+//     document.addEventListener("keydown", function (e) {
+//       if (e.key === "Escape" && !successModal.hidden) closeSuccessModal();
+//     });
+
+
+//   }
+
+
+//  if (successModal && successModal.parentNode !== document.body) {
+//     document.body.appendChild(successModal);
+//   }
+
+
 
   /* ---------------- success modal ---------------- */
   var successModal = document.querySelector("[data-success-modal]");
@@ -728,6 +542,9 @@
     });
   }
 
+
+
+
   /* ---------------- inline validation helpers ---------------- */
   function fieldError(afterEl, msg) {
     if (!afterEl) return;
@@ -739,17 +556,10 @@
       err.className = "field-error";
       host.appendChild(err);
     }
-    if (msg) {
-      err.innerHTML = msg;
-      err.classList.add("show");
-    } else {
-      err.classList.remove("show");
-      err.innerHTML = "";
-    }
+    if (msg) { err.innerHTML = msg; err.classList.add("show"); }
+    else { err.classList.remove("show"); err.innerHTML = ""; }
   }
-  function clearFieldError(afterEl) {
-    fieldError(afterEl, "");
-  }
+  function clearFieldError(afterEl) { fieldError(afterEl, ""); }
 
   function markSelectInvalid(sel, on) {
     var wrap = sel.parentNode && sel.parentNode.querySelector(".cf-select");
@@ -761,9 +571,7 @@
     var key = box.dataset.upload;
     var input = box.querySelector(".upload-input");
     var fileText = box.querySelector(".upload-file");
-    box.addEventListener("click", function () {
-      input.click();
-    });
+    box.addEventListener("click", function () { input.click(); });
     input.addEventListener("change", function () {
       var f = input.files && input.files[0];
       files[key] = f || null;
@@ -781,12 +589,8 @@
   function toDataUrl(file) {
     return new Promise(function (resolve, reject) {
       var r = new FileReader();
-      r.onload = function () {
-        resolve(r.result);
-      };
-      r.onerror = function () {
-        reject(new Error("Could not read file"));
-      };
+      r.onload = function () { resolve(r.result); };
+      r.onerror = function () { reject(new Error("Could not read file")); };
       r.readAsDataURL(file);
     });
   }
@@ -803,9 +607,7 @@
   }
 
   function isYouTubeShorts(url) {
-    return (
-      /youtube\.com\/shorts\//i.test(url) || /youtu\.be\/shorts\//i.test(url)
-    );
+    return /youtube\.com\/shorts\//i.test(url) || /youtu\.be\/shorts\//i.test(url);
   }
 
   function validateForm() {
@@ -822,14 +624,14 @@
     }
 
     var requiredNamed = [
-      ["name", WARN + "Please fill out this field."],
-      ["band", WARN + "Please fill out this field."],
-      ["artistType", WARN + "Please select an artist type."],
-      ["role", WARN + "Please select an option."],
-      ["country", WARN + "Please select your country."],
-      ["quote", WARN + "Please share your Zildjian quote."],
+      ["name",          WARN + "Please fill out this field."],
+      ["band",          WARN + "Please fill out this field."],
+      ["artistType",    WARN + "Please select an artist type."],
+      ["role",          WARN + "Please select an option."],
+      ["country",       WARN + "Please select your country."],
+      ["quote",         WARN + "Please share your Zildjian quote."],
     ];
-
+    
     requiredNamed.forEach(function (pair) {
       var el = form.querySelector('[name="' + pair[0] + '"]');
       if (!el) return;
@@ -841,9 +643,7 @@
       if (!String(el.value || "").trim()) fail(el, el, pair[1]);
     });
 
-    var cymbalPicker = root.querySelector(
-      '.cymbal-picker[data-group="cymbals"]',
-    );
+    var cymbalPicker = root.querySelector('.cymbal-picker[data-group="cymbals"]');
     if (cymbalPicker) {
       cymbalPicker.classList.remove("invalid");
       var cgrp = cymbalPicker.closest(".field-group");
@@ -853,22 +653,16 @@
         ok = false;
         cymbalPicker.classList.add("invalid");
         if (cgrp) cgrp.classList.add("invalid");
-        fieldError(
-          cymbalPicker,
-          WARN + "Please select at least one cymbal from your setup.",
-        );
+        fieldError(cymbalPicker, WARN + "Please select at least one cymbal from your setup.");
         if (!firstBad) firstBad = cgrp || cymbalPicker;
       }
     }
 
-    [
-      ["profilePhoto", WARN + "Please upload a profile photo."],
+    [["profilePhoto", WARN + "Please upload a profile photo."],
 
-      ["setupPhoto", WARN + "Please upload a setup photo."],
-    ].forEach(function (pair) {
-      var box = root.querySelector(
-        '.upload-box[data-upload="' + pair[0] + '"]',
-      );
+
+     ["setupPhoto",   WARN + "Please upload a setup photo."]].forEach(function (pair) {
+      var box = root.querySelector('.upload-box[data-upload="' + pair[0] + '"]');
       if (!box) return;
       box.classList.remove("invalid");
       var bgrp = box.closest(".field-group");
@@ -896,10 +690,10 @@
     //   }
     // });
 
-    [
-      ["profileRights", WARN + "Please select a usage rights option."],
-      ["setupRights", WARN + "Please select a usage rights option."],
-    ].forEach(function (pair) {
+
+
+    [["profileRights", WARN + "Please select a usage rights option."],
+     ["setupRights",   WARN + "Please select a usage rights option."]].forEach(function (pair) {
       var radios = form.querySelectorAll('input[name="' + pair[0] + '"]');
       if (!radios.length) return;
       var group = radios[0].closest(".field-group");
@@ -908,16 +702,15 @@
         var f = group.querySelector(".field-error");
         if (f) f.classList.remove("show");
       }
-      var checked = Array.prototype.some.call(radios, function (r) {
-        return r.checked;
-      });
+      var checked = Array.prototype.some.call(radios, function (r) { return r.checked; });
       if (!checked) {
         ok = false;
-        if (group) group.classList.add("invalid"); // <-- this line adds it
+        if (group) group.classList.add("invalid");   // <-- this line adds it
         fieldError(radios[0], pair[1]);
         if (!firstBad) firstBad = group || radios[0];
       }
     });
+
 
     var v1 = form.querySelector('[name="video1"]');
     if (v1) {
@@ -927,12 +720,7 @@
       clearFieldError(v1);
       var val = String(v1.value || "").trim();
       if (val && isYouTubeShorts(val)) {
-        fail(
-          v1,
-          v1,
-          WARN +
-            "YouTube Shorts are not supported. Please use a full-length YouTube URL.",
-        );
+        fail(v1, v1, WARN + "YouTube Shorts are not supported. Please use a full-length YouTube URL.");
       }
     }
 
@@ -952,11 +740,7 @@
     if (grp) grp.classList.remove("invalid");
     if (el.type === "radio") {
       var g = el.closest(".field-group");
-      if (g) {
-        g.classList.remove("invalid");
-        var f = g.querySelector(".field-error");
-        if (f) f.classList.remove("show");
-      }
+      if (g) { g.classList.remove("invalid"); var f = g.querySelector(".field-error"); if (f) f.classList.remove("show"); }
     }
   });
   form.addEventListener("change", function (e) {
@@ -985,6 +769,7 @@
         var fd = new FormData(form);
         var payload = Object.fromEntries(fd.entries());
 
+        
         payload.cymbals = (selected.cymbals || []).map(function (p) {
           return { id: p.id, title: p.title, sku: p.sku };
         });
@@ -992,58 +777,36 @@
         // manual free-text cymbals: one per line, sent as {title} (no id)
         var manualEl = form.querySelector('[name="cymbalsManual"]');
         if (manualEl && manualEl.value.trim()) {
-          var manualCymbals = manualEl.value
-            .split("\n")
-            .map(function (line) {
-              return line.trim();
-            })
+          var manualCymbals = manualEl.value.split("\n")
+            .map(function (line) { return line.trim(); })
             .filter(Boolean)
-            .map(function (title) {
-              return { title: title, manual: true };
-            });
+            .map(function (title) { return { title: title, manual: true }; });
           payload.cymbals = payload.cymbals.concat(manualCymbals);
         }
 
-        payload.gotos = (selected.gotos || []).map(function (p) {
-          return { id: p.id, title: p.title };
-        });
-        if (files.profilePhoto)
-          payload.profilePhoto = {
-            name: files.profilePhoto.name,
-            dataUrl: await toDataUrl(files.profilePhoto),
-          };
-        if (files.setupPhoto)
-          payload.setupPhoto = {
-            name: files.setupPhoto.name,
-            dataUrl: await toDataUrl(files.setupPhoto),
-          };
+
+        payload.gotos = (selected.gotos || []).map(function (p) { return { id: p.id, title: p.title }; });
+        if (files.profilePhoto) payload.profilePhoto = { name: files.profilePhoto.name, dataUrl: await toDataUrl(files.profilePhoto) };
+        if (files.setupPhoto) payload.setupPhoto = { name: files.setupPhoto.name, dataUrl: await toDataUrl(files.setupPhoto) };
 
         var res = await fetch(proxyUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(payload)
         });
-        var data = await res.json().catch(function () {
-          return {};
-        });
+        var data = await res.json().catch(function () { return {}; });
         if (!res.ok || (data && data.ok === false)) {
-          throw new Error(
-            (data && data.error) || "Server returned " + res.status,
-          );
+          throw new Error((data && data.error) || ("Server returned " + res.status));
         }
 
         if (!openSuccessModal()) {
-          showAlert(
-            "success",
-            "Thanks! Your profile was submitted and saved as a draft for review.",
-          );
+          showAlert("success", "Thanks! Your profile was submitted and saved as a draft for review.");
         }
         form.reset();
         resetAllPickers();
         root.querySelectorAll(".upload-box").forEach(function (b) {
           b.classList.remove("has-file");
-          var ft = b.querySelector(".upload-file");
-          if (ft) ft.textContent = "";
+          var ft = b.querySelector(".upload-file"); if (ft) ft.textContent = "";
         });
         files = {};
         if (counter) counter.textContent = "0 / 400";
