@@ -17,33 +17,34 @@
   var form = root.querySelector("#artist-form");
   var SECTIONS = ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"];
 
-  var selected = {};   // { cymbals: [...], gotos: [...] }
-  var files = {};      // { profilePhoto: File, setupPhoto: File }
+  var selected = {}; // { cymbals: [...], gotos: [...] }
+  var files = {}; // { profilePhoto: File, setupPhoto: File }
 
   // warning icon injected before each error message
-  var WARN = '<svg class="err-ico" xmlns="http://www.w3.org/2000/svg" width="13" height="14" viewBox="0 0 13 14" fill="none">'
-    + '<path d="M6.50016 12.9166C9.49171 12.9166 11.9168 10.4915 11.9168 7.49998C11.9168 4.50844 9.49171 2.08331 6.50016 2.08331C3.50862 2.08331 1.0835 4.50844 1.0835 7.49998C1.0835 10.4915 3.50862 12.9166 6.50016 12.9166Z" stroke="#C0392B" stroke-width="1.08333"/>'
-    + '<path d="M6.5 5.33331V7.49998" stroke="#C0392B" stroke-width="1.08333"/>'
-    + '<path d="M6.5 9.66669H6.50542" stroke="#C0392B" stroke-width="1.08333"/>'
-    + '</svg> ';
+  var WARN =
+    '<svg class="err-ico" xmlns="http://www.w3.org/2000/svg" width="13" height="14" viewBox="0 0 13 14" fill="none">' +
+    '<path d="M6.50016 12.9166C9.49171 12.9166 11.9168 10.4915 11.9168 7.49998C11.9168 4.50844 9.49171 2.08331 6.50016 2.08331C3.50862 2.08331 1.0835 4.50844 1.0835 7.49998C1.0835 10.4915 3.50862 12.9166 6.50016 12.9166Z" stroke="#C0392B" stroke-width="1.08333"/>' +
+    '<path d="M6.5 5.33331V7.49998" stroke="#C0392B" stroke-width="1.08333"/>' +
+    '<path d="M6.5 9.66669H6.50542" stroke="#C0392B" stroke-width="1.08333"/>' +
+    "</svg> ";
 
   /* ---------------- nav / scroll-spy ---------------- */
   var navLinks = root.querySelectorAll(".sidebar-link, .mobile-tab");
   var tabBar = root.querySelector(".mobile-tabs");
   var clickLock = false;
 
-
   /* keep mobile tabs just below the site's sticky header */
   var siteHeader = document.querySelector(".section-header");
-  
+
   function setHeaderH() {
-    var h = siteHeader ? Math.max(0, siteHeader.getBoundingClientRect().bottom) : 0;
+    var h = siteHeader
+      ? Math.max(0, siteHeader.getBoundingClientRect().bottom)
+      : 0;
     root.style.setProperty("--header-h", h + "px");
   }
   setHeaderH();
   window.addEventListener("resize", setHeaderH);
   window.addEventListener("scroll", setHeaderH, { passive: true });
-
 
   function setActive(id) {
     navLinks.forEach(function (a) {
@@ -53,17 +54,24 @@
       var tab = tabBar.querySelector('.mobile-tab[href="#' + id + '"]');
       if (tab) {
         var bw = tabBar.offsetWidth;
-        tabBar.scrollTo({ left: tab.offsetLeft - bw / 2 + tab.offsetWidth / 2, behavior: "smooth" });
+        tabBar.scrollTo({
+          left: tab.offsetLeft - bw / 2 + tab.offsetWidth / 2,
+          behavior: "smooth",
+        });
       }
     }
   }
 
   function onScroll() {
     if (clickLock) return;
-    if (window.scrollY < 10) { setActive("s1"); return; }
+    if (window.scrollY < 10) {
+      setActive("s1");
+      return;
+    }
     var scrollBottom = window.scrollY + window.innerHeight;
     if (document.documentElement.scrollHeight - scrollBottom < 10) {
-      setActive(SECTIONS[SECTIONS.length - 1]); return;
+      setActive(SECTIONS[SECTIONS.length - 1]);
+      return;
     }
     var offset = window.innerHeight * 0.45;
     var current = SECTIONS[0];
@@ -79,7 +87,9 @@
       var id = (a.getAttribute("href") || "").slice(1);
       setActive(id);
       clickLock = true;
-      setTimeout(function () { clickLock = false; }, 800);
+      setTimeout(function () {
+        clickLock = false;
+      }, 800);
     });
   });
   window.addEventListener("scroll", onScroll, { passive: true });
@@ -93,168 +103,213 @@
   var SEARCH_THRESHOLD = 8;
   var openDropdown = null;
 
-function buildCustomSelect(sel) {
-  if (sel.dataset.cfDone) return;
-  sel.dataset.cfDone = "1";
+  function buildCustomSelect(sel) {
+    if (sel.dataset.cfDone) return;
+    sel.dataset.cfDone = "1";
 
-  var multi = sel.multiple;
-  var opts = Array.prototype.map.call(sel.options, function (o) {
-    return { value: o.value, label: o.textContent, placeholder: (o.value === "") };
-  });
-  var placeholderLabel = sel.dataset.placeholder
-    || ((opts[0] && opts[0].placeholder) ? opts[0].label : "Select an option...");
-  var realOpts = opts.filter(function (o) { return !o.placeholder; });
-  var searchable = realOpts.length > SEARCH_THRESHOLD || sel.dataset.searchable === "true";
-
-  function isSelected(v) {
-    return multi
-      ? Array.prototype.some.call(sel.selectedOptions, function (o) { return o.value === v; })
-      : sel.value === v;
-  }
-
-  var wrap = document.createElement("div");
-  wrap.className = "cf-select";
-
-  var btn = document.createElement("button");
-  btn.type = "button";
-  btn.className = "cf-trigger field-input";
-  var labelSpan = document.createElement("span");
-  labelSpan.className = "cf-value placeholder";
-  labelSpan.textContent = placeholderLabel;
-  btn.appendChild(labelSpan);
-  var caret = document.createElement("span");
-  caret.className = "cf-caret";
-  caret.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
-  btn.appendChild(caret);
-  wrap.appendChild(btn);
-
-  var panel = document.createElement("div");
-  panel.className = "cf-panel";
-  panel.hidden = true;
-
-  var searchInput = null;
-  if (searchable) {
-    var searchWrap = document.createElement("div");
-    searchWrap.className = "cf-search";
-    searchWrap.innerHTML = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M6.41667 11.0833C8.994 11.0833 11.0833 8.994 11.0833 6.41667C11.0833 3.83934 8.994 1.75 6.41667 1.75C3.83934 1.75 1.75 3.83934 1.75 6.41667C1.75 8.994 3.83934 11.0833 6.41667 11.0833Z" stroke="#000000" stroke-width="1.16667"/><path d="M12.2499 12.25L9.7124 9.71252" stroke="#000000" stroke-width="1.16667"/></svg>';
-    searchInput = document.createElement("input");
-    searchInput.type = "text";
-    searchInput.className = "cf-search-input";
-    searchInput.placeholder = "Search...";
-    searchWrap.appendChild(searchInput);
-    panel.appendChild(searchWrap);
-  }
-
-  var ul = document.createElement("ul");
-  ul.className = "cf-options";
-  panel.appendChild(ul);
-  wrap.appendChild(panel);
-
-  function renderOptions(filter) {
-    ul.innerHTML = "";
-    var f = (filter || "").toLowerCase();
-    var shown = realOpts.filter(function (o) {
-      return !f || o.label.toLowerCase().indexOf(f) !== -1;
+    var multi = sel.multiple;
+    var opts = Array.prototype.map.call(sel.options, function (o) {
+      return {
+        value: o.value,
+        label: o.textContent,
+        placeholder: o.value === "",
+      };
     });
-    if (shown.length === 0) {
-      var empty = document.createElement("li");
-      empty.className = "cf-empty";
-      empty.textContent = "No matches";
-      ul.appendChild(empty);
-      return;
-    }
-    shown.forEach(function (o) {
-      var on = isSelected(o.value);
-      var li = document.createElement("li");
-      li.className = "cf-option" + (on ? " selected" : "") + (multi ? " multi" : "");
-      li.setAttribute("data-value", o.value);
-      li.setAttribute("role", "option");
-      var txt = document.createElement("span");
-      txt.className = "cf-option-label";
-      txt.textContent = o.label;
-      li.appendChild(txt);
-      if (on) {
-        var chk = document.createElement("span");
-        chk.className = "cf-check";
-        chk.innerHTML = '✓';
-        li.appendChild(chk);
-      }
-      li.addEventListener("click", function () { choose(o); });
-      ul.appendChild(li);
+    var placeholderLabel =
+      sel.dataset.placeholder ||
+      (opts[0] && opts[0].placeholder ? opts[0].label : "Select an option...");
+    var realOpts = opts.filter(function (o) {
+      return !o.placeholder;
     });
-  }
+    var searchable =
+      realOpts.length > SEARCH_THRESHOLD || sel.dataset.searchable === "true";
 
-  function setLabel() {
-    if (multi) {
-      var labels = realOpts.filter(function (o) { return isSelected(o.value); })
-        .map(function (o) { return o.label; });
-      labelSpan.textContent = labels.length ? labels.join(", ") : placeholderLabel;
-      labelSpan.classList.toggle("placeholder", !labels.length);
-      return;
+    function isSelected(v) {
+      return multi
+        ? Array.prototype.some.call(sel.selectedOptions, function (o) {
+            return o.value === v;
+          })
+        : sel.value === v;
     }
-    if (sel.value) {
-      var match = realOpts.filter(function (o) { return o.value === sel.value; })[0];
-      labelSpan.textContent = match ? match.label : sel.value;
-      labelSpan.classList.remove("placeholder");
-    } else {
-      labelSpan.textContent = placeholderLabel;
-      labelSpan.classList.add("placeholder");
-    }
-  }
 
-  function choose(o) {
-    if (multi) {
-      Array.prototype.forEach.call(sel.options, function (opt) {
-        if (opt.value === o.value) opt.selected = !opt.selected;
+    var wrap = document.createElement("div");
+    wrap.className = "cf-select";
+
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "cf-trigger field-input";
+    var labelSpan = document.createElement("span");
+    labelSpan.className = "cf-value placeholder";
+    labelSpan.textContent = placeholderLabel;
+    btn.appendChild(labelSpan);
+    var caret = document.createElement("span");
+    caret.className = "cf-caret";
+    caret.innerHTML =
+      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+    btn.appendChild(caret);
+    wrap.appendChild(btn);
+
+    var panel = document.createElement("div");
+    panel.className = "cf-panel";
+    panel.hidden = true;
+
+    var searchInput = null;
+    if (searchable) {
+      var searchWrap = document.createElement("div");
+      searchWrap.className = "cf-search";
+      searchWrap.innerHTML =
+        '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M6.41667 11.0833C8.994 11.0833 11.0833 8.994 11.0833 6.41667C11.0833 3.83934 8.994 1.75 6.41667 1.75C3.83934 1.75 1.75 3.83934 1.75 6.41667C1.75 8.994 3.83934 11.0833 6.41667 11.0833Z" stroke="#000000" stroke-width="1.16667"/><path d="M12.2499 12.25L9.7124 9.71252" stroke="#000000" stroke-width="1.16667"/></svg>';
+      searchInput = document.createElement("input");
+      searchInput.type = "text";
+      searchInput.className = "cf-search-input";
+      searchInput.placeholder = "Search...";
+      searchWrap.appendChild(searchInput);
+      panel.appendChild(searchWrap);
+    }
+
+    var ul = document.createElement("ul");
+    ul.className = "cf-options";
+    panel.appendChild(ul);
+    wrap.appendChild(panel);
+
+    function renderOptions(filter) {
+      ul.innerHTML = "";
+      var f = (filter || "").toLowerCase();
+      var shown = realOpts.filter(function (o) {
+        return !f || o.label.toLowerCase().indexOf(f) !== -1;
       });
+      if (shown.length === 0) {
+        var empty = document.createElement("li");
+        empty.className = "cf-empty";
+        empty.textContent = "No matches";
+        ul.appendChild(empty);
+        return;
+      }
+      shown.forEach(function (o) {
+        var on = isSelected(o.value);
+        var li = document.createElement("li");
+        li.className =
+          "cf-option" + (on ? " selected" : "") + (multi ? " multi" : "");
+        li.setAttribute("data-value", o.value);
+        li.setAttribute("role", "option");
+        var txt = document.createElement("span");
+        txt.className = "cf-option-label";
+        txt.textContent = o.label;
+        li.appendChild(txt);
+        if (on) {
+          var chk = document.createElement("span");
+          chk.className = "cf-check";
+          chk.innerHTML = "✓";
+          li.appendChild(chk);
+        }
+        li.addEventListener("click", function () {
+          choose(o);
+        });
+        ul.appendChild(li);
+      });
+    }
+
+    function setLabel() {
+      if (multi) {
+        var labels = realOpts
+          .filter(function (o) {
+            return isSelected(o.value);
+          })
+          .map(function (o) {
+            return o.label;
+          });
+        labelSpan.textContent = labels.length
+          ? labels.join(", ")
+          : placeholderLabel;
+        labelSpan.classList.toggle("placeholder", !labels.length);
+        return;
+      }
+      if (sel.value) {
+        var match = realOpts.filter(function (o) {
+          return o.value === sel.value;
+        })[0];
+        labelSpan.textContent = match ? match.label : sel.value;
+        labelSpan.classList.remove("placeholder");
+      } else {
+        labelSpan.textContent = placeholderLabel;
+        labelSpan.classList.add("placeholder");
+      }
+    }
+
+    function choose(o) {
+      if (multi) {
+        Array.prototype.forEach.call(sel.options, function (opt) {
+          if (opt.value === o.value) opt.selected = !opt.selected;
+        });
+        sel.dispatchEvent(new Event("change", { bubbles: true }));
+        setLabel();
+        renderOptions(searchInput ? searchInput.value.trim() : ""); // dropdown open rehta hai
+        return;
+      }
+      sel.value = o.value;
       sel.dispatchEvent(new Event("change", { bubbles: true }));
       setLabel();
-      renderOptions(searchInput ? searchInput.value.trim() : "");  // dropdown open rehta hai
-      return;
+      close();
     }
-    sel.value = o.value;
-    sel.dispatchEvent(new Event("change", { bubbles: true }));
+
+    function open() {
+      if (openDropdown && openDropdown !== wrap) openDropdown.__cfClose();
+      panel.hidden = false;
+      wrap.classList.add("open");
+      openDropdown = wrap;
+      renderOptions("");
+      if (searchInput) {
+        searchInput.value = "";
+        setTimeout(function () {
+          searchInput.focus();
+        }, 0);
+      }
+    }
+    function close() {
+      panel.hidden = true;
+      wrap.classList.remove("open");
+      if (openDropdown === wrap) openDropdown = null;
+    }
+    wrap.__cfClose = close;
+
+    btn.addEventListener("click", function (e) {
+      e.preventDefault();
+      if (panel.hidden) open();
+      else close();
+    });
+
+    if (searchInput) {
+      searchInput.addEventListener("input", function () {
+        renderOptions(searchInput.value.trim());
+      });
+      searchInput.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") {
+          close();
+          btn.focus();
+        }
+      });
+    }
+
+    sel.addEventListener("change", function () {
+      setLabel();
+    });
+    if (form)
+      form.addEventListener("reset", function () {
+        setTimeout(function () {
+          setLabel();
+        }, 0);
+      });
+
+    sel.classList.add("cf-native-hidden");
+    sel.parentNode.insertBefore(wrap, sel.nextSibling);
     setLabel();
-    close();
   }
 
-  function open() {
-    if (openDropdown && openDropdown !== wrap) openDropdown.__cfClose();
-    panel.hidden = false;
-    wrap.classList.add("open");
-    openDropdown = wrap;
-    renderOptions("");
-    if (searchInput) { searchInput.value = ""; setTimeout(function () { searchInput.focus(); }, 0); }
-  }
-  function close() {
-    panel.hidden = true;
-    wrap.classList.remove("open");
-    if (openDropdown === wrap) openDropdown = null;
-  }
-  wrap.__cfClose = close;
-
-  btn.addEventListener("click", function (e) {
-    e.preventDefault();
-    if (panel.hidden) open(); else close();
-  });
-
-  if (searchInput) {
-    searchInput.addEventListener("input", function () { renderOptions(searchInput.value.trim()); });
-    searchInput.addEventListener("keydown", function (e) { if (e.key === "Escape") { close(); btn.focus(); } });
-  }
-
-  sel.addEventListener("change", function () { setLabel(); });
-  if (form) form.addEventListener("reset", function () { setTimeout(function () { setLabel(); }, 0); });
-
-  sel.classList.add("cf-native-hidden");
-  sel.parentNode.insertBefore(wrap, sel.nextSibling);
-  setLabel();
-}
-
-  form.querySelectorAll('select.field-input').forEach(buildCustomSelect);
+  form.querySelectorAll("select.field-input").forEach(buildCustomSelect);
 
   document.addEventListener("click", function (e) {
-    if (openDropdown && !openDropdown.contains(e.target)) openDropdown.__cfClose();
+    if (openDropdown && !openDropdown.contains(e.target))
+      openDropdown.__cfClose();
   });
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape" && openDropdown) openDropdown.__cfClose();
@@ -281,20 +336,38 @@ function buildCustomSelect(sel) {
     var cpList = pickerEl.querySelector(".cp-list");
     var cpCount = pickerEl.querySelector(".cp-count");
     var cpClear = pickerEl.querySelector(".cp-clear");
-    var cpChips = pickerEl.querySelector(".cp-selected")
-      || (pickerEl.parentNode && pickerEl.parentNode.querySelector(".cp-selected"));
+    var cpChips =
+      pickerEl.querySelector(".cp-selected") ||
+      (pickerEl.parentNode &&
+        pickerEl.parentNode.querySelector(".cp-selected"));
 
     var state = {
-      term: "", items: [], cursor: null, hasNext: false,
-      loading: false, reqId: 0, started: false
+      term: "",
+      items: [],
+      cursor: null,
+      hasNext: false,
+      loading: false,
+      reqId: 0,
+      started: false,
     };
     var typeTimer;
 
-    function isSel(id) { return selected[group].some(function (x) { return x.id === id; }); }
-    function updateCount() { if (cpCount) cpCount.textContent = selected[group].length + " selected"; }
+    function isSel(id) {
+      return selected[group].some(function (x) {
+        return x.id === id;
+      });
+    }
+    function updateCount() {
+      if (cpCount) cpCount.textContent = selected[group].length + " selected";
+    }
     function toggle(p, on) {
-      if (on) { if (!isSel(p.id)) selected[group].push(p); }
-      else { selected[group] = selected[group].filter(function (x) { return x.id !== p.id; }); }
+      if (on) {
+        if (!isSel(p.id)) selected[group].push(p);
+      } else {
+        selected[group] = selected[group].filter(function (x) {
+          return x.id !== p.id;
+        });
+      }
       updateCount();
       renderChips();
       if (selected[group].length > 0) {
@@ -309,7 +382,10 @@ function buildCustomSelect(sel) {
     function renderChips() {
       if (!cpChips) return;
       cpChips.innerHTML = "";
-      if (selected[group].length === 0) { cpChips.hidden = true; return; }
+      if (selected[group].length === 0) {
+        cpChips.hidden = true;
+        return;
+      }
       cpChips.hidden = false;
       selected[group].forEach(function (p) {
         var chip = document.createElement("span");
@@ -358,8 +434,10 @@ function buildCustomSelect(sel) {
       thumb.className = "cp-thumb";
       if (p.image) {
         var img = document.createElement("img");
-        img.src = p.image; img.alt = "";
-        img.loading = "lazy"; img.decoding = "async";
+        img.src = p.image;
+        img.alt = "";
+        img.loading = "lazy";
+        img.decoding = "async";
         thumb.appendChild(img);
       }
       row.appendChild(thumb);
@@ -392,16 +470,23 @@ function buildCustomSelect(sel) {
 
     function appendItems(newItems) {
       var frag = document.createDocumentFragment();
-      newItems.forEach(function (p) { frag.appendChild(makeRow(p)); });
+      newItems.forEach(function (p) {
+        frag.appendChild(makeRow(p));
+      });
       var status = cpList.querySelector(".cp-empty");
       if (status) cpList.insertBefore(frag, status);
       else cpList.appendChild(frag);
     }
 
     function startQuery(term) {
-      state.term = term; state.items = []; state.cursor = null;
-      state.hasNext = false; state.loading = false; state.reqId++;
-      cpList.innerHTML = ""; cpList.scrollTop = 0;
+      state.term = term;
+      state.items = [];
+      state.cursor = null;
+      state.hasNext = false;
+      state.loading = false;
+      state.reqId++;
+      cpList.innerHTML = "";
+      cpList.scrollTop = 0;
       loadPage(true);
     }
 
@@ -415,7 +500,9 @@ function buildCustomSelect(sel) {
       if (state.term.length >= 2) qs += "&q=" + encodeURIComponent(state.term);
       if (state.cursor) qs += "&after=" + encodeURIComponent(state.cursor);
       fetch(searchUrl + qs, { headers: { Accept: "application/json" } })
-        .then(function (r) { return r.json(); })
+        .then(function (r) {
+          return r.json();
+        })
         .then(function (data) {
           if (myReq !== state.reqId) return;
           var items = (data && data.products) || [];
@@ -427,7 +514,9 @@ function buildCustomSelect(sel) {
           setStatus(null);
           appendItems(items);
           if (state.items.length === 0) {
-            setStatus(state.term.length >= 2 ? "No matches" : "No products found");
+            setStatus(
+              state.term.length >= 2 ? "No matches" : "No products found",
+            );
           }
           maybeAutoFill();
         })
@@ -439,94 +528,120 @@ function buildCustomSelect(sel) {
     }
 
     function maybeAutoFill() {
-      if (state.hasNext && cpList.scrollHeight <= cpList.clientHeight + 4) loadPage(false);
+      if (state.hasNext && cpList.scrollHeight <= cpList.clientHeight + 4)
+        loadPage(false);
     }
 
-    cpList.addEventListener("scroll", function () {
-      if (cpList.scrollTop + cpList.clientHeight >= cpList.scrollHeight - 60) loadPage(false);
-    }, { passive: true });
+    cpList.addEventListener(
+      "scroll",
+      function () {
+        if (cpList.scrollTop + cpList.clientHeight >= cpList.scrollHeight - 60)
+          loadPage(false);
+      },
+      { passive: true },
+    );
 
     pickerResets.push(function () {
       selected[group] = [];
       if (cpInput) cpInput.value = "";
-      updateCount(); renderChips(); startQuery("");
+      updateCount();
+      renderChips();
+      startQuery("");
     });
 
     if (cpInput) {
       cpInput.addEventListener("input", function () {
         var t = cpInput.value.trim();
         clearTimeout(typeTimer);
-        if (t.length < 2) { startQuery(""); return; }
-        typeTimer = setTimeout(function () { startQuery(t); }, 300);
+        if (t.length < 2) {
+          startQuery("");
+          return;
+        }
+        typeTimer = setTimeout(function () {
+          startQuery(t);
+        }, 300);
       });
     }
     if (cpClear) {
       cpClear.addEventListener("click", function (e) {
         e.preventDefault();
         selected[group] = [];
-        updateCount(); renderChips();
-        cpList.querySelectorAll(".cp-check").forEach(function (cb) { cb.checked = false; });
-        cpList.querySelectorAll(".cp-row.selected").forEach(function (r) { r.classList.remove("selected"); });
+        updateCount();
+        renderChips();
+        cpList.querySelectorAll(".cp-check").forEach(function (cb) {
+          cb.checked = false;
+        });
+        cpList.querySelectorAll(".cp-row.selected").forEach(function (r) {
+          r.classList.remove("selected");
+        });
       });
     }
 
-    renderChips(); updateCount();
+    renderChips();
+    updateCount();
 
     if (mode === "browse") {
       var sectionEl = pickerEl.closest("section") || pickerEl;
       setStatus("Loading…");
       if ("IntersectionObserver" in window) {
-        var io = new IntersectionObserver(function (entries) {
-          entries.forEach(function (en) {
-            if (en.isIntersecting && !state.started) {
-              state.started = true; startQuery(""); io.disconnect();
-            }
-          });
-        }, { rootMargin: "300px" });
+        var io = new IntersectionObserver(
+          function (entries) {
+            entries.forEach(function (en) {
+              if (en.isIntersecting && !state.started) {
+                state.started = true;
+                startQuery("");
+                io.disconnect();
+              }
+            });
+          },
+          { rootMargin: "300px" },
+        );
         io.observe(sectionEl);
-      } else { state.started = true; startQuery(""); }
+      } else {
+        state.started = true;
+        startQuery("");
+      }
     } else {
-      state.started = true; startQuery("");
+      state.started = true;
+      startQuery("");
     }
   }
 
   root.querySelectorAll(".cymbal-picker").forEach(initPicker);
 
-  function resetAllPickers() { pickerResets.forEach(function (fn) { fn(); }); }
+  function resetAllPickers() {
+    pickerResets.forEach(function (fn) {
+      fn();
+    });
+  }
 
   /* ---------------- success modal ---------------- */
-//   var successModal = document.querySelector("[data-success-modal]");
+  //   var successModal = document.querySelector("[data-success-modal]");
 
+  //   function openSuccessModal() {
+  //     if (!successModal) return false;
+  //     successModal.hidden = false;
+  //     document.body.style.overflow = "hidden";
+  //     return true;
+  //   }
+  //   function closeSuccessModal() {
+  //     if (!successModal) return;
+  //     successModal.hidden = true;
+  //     document.body.style.overflow = "";
+  //   }
+  //   if (successModal) {
+  //     successModal.addEventListener("click", function (e) {
+  //       if (e.target === successModal) closeSuccessModal();
+  //     });
+  //     document.addEventListener("keydown", function (e) {
+  //       if (e.key === "Escape" && !successModal.hidden) closeSuccessModal();
+  //     });
 
+  //   }
 
-//   function openSuccessModal() {
-//     if (!successModal) return false;
-//     successModal.hidden = false;
-//     document.body.style.overflow = "hidden";
-//     return true;
-//   }
-//   function closeSuccessModal() {
-//     if (!successModal) return;
-//     successModal.hidden = true;
-//     document.body.style.overflow = "";
-//   }
-//   if (successModal) {
-//     successModal.addEventListener("click", function (e) {
-//       if (e.target === successModal) closeSuccessModal();
-//     });
-//     document.addEventListener("keydown", function (e) {
-//       if (e.key === "Escape" && !successModal.hidden) closeSuccessModal();
-//     });
-
-
-//   }
-
-
-//  if (successModal && successModal.parentNode !== document.body) {
-//     document.body.appendChild(successModal);
-//   }
-
-
+  //  if (successModal && successModal.parentNode !== document.body) {
+  //     document.body.appendChild(successModal);
+  //   }
 
   /* ---------------- success modal ---------------- */
   var successModal = document.querySelector("[data-success-modal]");
@@ -567,9 +682,6 @@ function buildCustomSelect(sel) {
     });
   }
 
-
-
-
   /* ---------------- inline validation helpers ---------------- */
   function fieldError(afterEl, msg) {
     if (!afterEl) return;
@@ -581,10 +693,17 @@ function buildCustomSelect(sel) {
       err.className = "field-error";
       host.appendChild(err);
     }
-    if (msg) { err.innerHTML = msg; err.classList.add("show"); }
-    else { err.classList.remove("show"); err.innerHTML = ""; }
+    if (msg) {
+      err.innerHTML = msg;
+      err.classList.add("show");
+    } else {
+      err.classList.remove("show");
+      err.innerHTML = "";
+    }
   }
-  function clearFieldError(afterEl) { fieldError(afterEl, ""); }
+  function clearFieldError(afterEl) {
+    fieldError(afterEl, "");
+  }
 
   function markSelectInvalid(sel, on) {
     var wrap = sel.parentNode && sel.parentNode.querySelector(".cf-select");
@@ -593,73 +712,80 @@ function buildCustomSelect(sel) {
 
   /* ---------------- photo uploads ---------------- */
   root.querySelectorAll(".upload-box").forEach(function (box) {
-  var key = box.dataset.upload;
-  var input = box.querySelector(".upload-input");
-  var fileText = box.querySelector(".upload-file");
+    var key = box.dataset.upload;
+    var input = box.querySelector(".upload-input");
+    var fileText = box.querySelector(".upload-file");
 
-  function setFile(f) {
-    files[key] = f || null;
-    if (fileText) fileText.textContent = f ? f.name : "";
-    box.classList.toggle("has-file", !!f);
-    if (f) {
-      box.classList.remove("invalid");
-      var grp = box.closest(".field-group");
-      if (grp) grp.classList.remove("invalid");
-      clearFieldError(box);
+    function setFile(f) {
+      files[key] = f || null;
+      if (fileText) fileText.textContent = f ? f.name : "";
+      box.classList.toggle("has-file", !!f);
+      if (f) {
+        box.classList.remove("invalid");
+        var grp = box.closest(".field-group");
+        if (grp) grp.classList.remove("invalid");
+        clearFieldError(box);
+      }
     }
-  }
 
-  box.addEventListener("click", function (e) {
-    if (e.target === input) return;
-    input.click();
-  });
-  input.addEventListener("change", function () {
-    setFile(input.files && input.files[0]);
-  });
+    box.addEventListener("click", function (e) {
+      if (e.target === input) return;
+      input.click();
+    });
+    input.addEventListener("change", function () {
+      setFile(input.files && input.files[0]);
+    });
 
-  // ---- drag & drop ----
-  ["dragenter", "dragover"].forEach(function (ev) {
-    box.addEventListener(ev, function (e) {
+    // ---- drag & drop ----
+    ["dragenter", "dragover"].forEach(function (ev) {
+      box.addEventListener(ev, function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        box.classList.add("dragover");
+      });
+    });
+    box.addEventListener("dragleave", function (e) {
+      if (box.contains(e.relatedTarget)) return;
+      box.classList.remove("dragover");
+    });
+    box.addEventListener("drop", function (e) {
       e.preventDefault();
       e.stopPropagation();
-      box.classList.add("dragover");
+      box.classList.remove("dragover");
+      var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (!f) return;
+      if (!/^image\//i.test(f.type)) {
+        fieldError(box, WARN + "Please drop an image file (JPG, PNG, TIFF).");
+        return;
+      }
+      try {
+        var dt = new DataTransfer();
+        dt.items.add(f);
+        input.files = dt.files;
+      } catch (err) {
+        /* purane browsers: files[key] phir bhi set ho jayega */
+      }
+      setFile(f);
     });
   });
-  box.addEventListener("dragleave", function (e) {
-    if (box.contains(e.relatedTarget)) return;
-    box.classList.remove("dragover");
-  });
-  box.addEventListener("drop", function (e) {
-    e.preventDefault();
-    e.stopPropagation();
-    box.classList.remove("dragover");
-    var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-    if (!f) return;
-    if (!/^image\//i.test(f.type)) {
-      fieldError(box, WARN + "Please drop an image file (JPG, PNG, TIFF).");
-      return;
-    }
-    try {
-      var dt = new DataTransfer();
-      dt.items.add(f);
-      input.files = dt.files;
-    } catch (err) { /* purane browsers: files[key] phir bhi set ho jayega */ }
-    setFile(f);
-  });
-});
 
-// box ke bahar file drop ho to browser file open na kare
-["dragover", "drop"].forEach(function (ev) {
-  window.addEventListener(ev, function (e) {
-    if (!e.target.closest || !e.target.closest(".upload-box")) e.preventDefault();
+  // box ke bahar file drop ho to browser file open na kare
+  ["dragover", "drop"].forEach(function (ev) {
+    window.addEventListener(ev, function (e) {
+      if (!e.target.closest || !e.target.closest(".upload-box"))
+        e.preventDefault();
+    });
   });
-});
 
   function toDataUrl(file) {
     return new Promise(function (resolve, reject) {
       var r = new FileReader();
-      r.onload = function () { resolve(r.result); };
-      r.onerror = function () { reject(new Error("Could not read file")); };
+      r.onload = function () {
+        resolve(r.result);
+      };
+      r.onerror = function () {
+        reject(new Error("Could not read file"));
+      };
       r.readAsDataURL(file);
     });
   }
@@ -676,7 +802,9 @@ function buildCustomSelect(sel) {
   }
 
   function isYouTubeShorts(url) {
-    return /youtube\.com\/shorts\//i.test(url) || /youtu\.be\/shorts\//i.test(url);
+    return (
+      /youtube\.com\/shorts\//i.test(url) || /youtu\.be\/shorts\//i.test(url)
+    );
   }
 
   function validateForm() {
@@ -693,14 +821,14 @@ function buildCustomSelect(sel) {
     }
 
     var requiredNamed = [
-      ["name",          WARN + "Please fill out this field."],
-      ["band",          WARN + "Please fill out this field."],
-      ["artistType",    WARN + "Please select an artist type."],
-      // ["role",          WARN + "Please select an option."],
-      ["country",       WARN + "Please select your country."],
-      ["quote",         WARN + "Please share your Zildjian quote."],
+      ["name", WARN + "Please fill out this field."],
+      ["band", WARN + "Please fill out this field."],
+      ["artistType", WARN + "Please select an artist type."],
+      ["role", WARN + "Please select an option."],
+      ["country", WARN + "Please select your country."],
+      ["quote", WARN + "Please share your Zildjian quote."],
     ];
-    
+
     requiredNamed.forEach(function (pair) {
       var el = form.querySelector('[name="' + pair[0] + '"]');
       if (!el) return;
@@ -712,7 +840,9 @@ function buildCustomSelect(sel) {
       if (!String(el.value || "").trim()) fail(el, el, pair[1]);
     });
 
-    var cymbalPicker = root.querySelector('.cymbal-picker[data-group="cymbals"]');
+    var cymbalPicker = root.querySelector(
+      '.cymbal-picker[data-group="cymbals"]',
+    );
     if (cymbalPicker) {
       cymbalPicker.classList.remove("invalid");
       var cgrp = cymbalPicker.closest(".field-group");
@@ -722,15 +852,22 @@ function buildCustomSelect(sel) {
         ok = false;
         cymbalPicker.classList.add("invalid");
         if (cgrp) cgrp.classList.add("invalid");
-        fieldError(cymbalPicker, WARN + "Please select at least one cymbal from your setup.");
+        fieldError(
+          cymbalPicker,
+          WARN + "Please select at least one cymbal from your setup.",
+        );
         if (!firstBad) firstBad = cgrp || cymbalPicker;
       }
     }
 
-    [["profilePhoto", WARN + "Please upload a profile photo."],
-    
-     ["setupPhoto",   WARN + "Please upload a setup photo."]].forEach(function (pair) {
-      var box = root.querySelector('.upload-box[data-upload="' + pair[0] + '"]');
+    [
+      ["profilePhoto", WARN + "Please upload a profile photo."],
+
+      ["setupPhoto", WARN + "Please upload a setup photo."],
+    ].forEach(function (pair) {
+      var box = root.querySelector(
+        '.upload-box[data-upload="' + pair[0] + '"]',
+      );
       if (!box) return;
       box.classList.remove("invalid");
       var bgrp = box.closest(".field-group");
@@ -758,10 +895,10 @@ function buildCustomSelect(sel) {
     //   }
     // });
 
-
-
-    [["profileRights", WARN + "Please select a usage rights option."],
-     ["setupRights",   WARN + "Please select a usage rights option."]].forEach(function (pair) {
+    [
+      ["profileRights", WARN + "Please select a usage rights option."],
+      ["setupRights", WARN + "Please select a usage rights option."],
+    ].forEach(function (pair) {
       var radios = form.querySelectorAll('input[name="' + pair[0] + '"]');
       if (!radios.length) return;
       var group = radios[0].closest(".field-group");
@@ -770,15 +907,16 @@ function buildCustomSelect(sel) {
         var f = group.querySelector(".field-error");
         if (f) f.classList.remove("show");
       }
-      var checked = Array.prototype.some.call(radios, function (r) { return r.checked; });
+      var checked = Array.prototype.some.call(radios, function (r) {
+        return r.checked;
+      });
       if (!checked) {
         ok = false;
-        if (group) group.classList.add("invalid");   // <-- this line adds it
+        if (group) group.classList.add("invalid"); // <-- this line adds it
         fieldError(radios[0], pair[1]);
         if (!firstBad) firstBad = group || radios[0];
       }
     });
-
 
     var v1 = form.querySelector('[name="video1"]');
     if (v1) {
@@ -788,7 +926,12 @@ function buildCustomSelect(sel) {
       clearFieldError(v1);
       var val = String(v1.value || "").trim();
       if (val && isYouTubeShorts(val)) {
-        fail(v1, v1, WARN + "YouTube Shorts are not supported. Please use a full-length YouTube URL.");
+        fail(
+          v1,
+          v1,
+          WARN +
+            "YouTube Shorts are not supported. Please use a full-length YouTube URL.",
+        );
       }
     }
 
@@ -808,7 +951,11 @@ function buildCustomSelect(sel) {
     if (grp) grp.classList.remove("invalid");
     if (el.type === "radio") {
       var g = el.closest(".field-group");
-      if (g) { g.classList.remove("invalid"); var f = g.querySelector(".field-error"); if (f) f.classList.remove("show"); }
+      if (g) {
+        g.classList.remove("invalid");
+        var f = g.querySelector(".field-error");
+        if (f) f.classList.remove("show");
+      }
     }
   });
   form.addEventListener("change", function (e) {
@@ -837,7 +984,10 @@ function buildCustomSelect(sel) {
         var fd = new FormData(form);
         var payload = Object.fromEntries(fd.entries());
         payload.artistType = fd.getAll("artistType");
-        
+
+        payload.artistType = fd.getAll("artistType");
+        payload.role = fd.getAll("role");
+
         payload.cymbals = (selected.cymbals || []).map(function (p) {
           return { id: p.id, title: p.title, sku: p.sku };
         });
@@ -845,36 +995,58 @@ function buildCustomSelect(sel) {
         // manual free-text cymbals: one per line, sent as {title} (no id)
         var manualEl = form.querySelector('[name="cymbalsManual"]');
         if (manualEl && manualEl.value.trim()) {
-          var manualCymbals = manualEl.value.split("\n")
-            .map(function (line) { return line.trim(); })
+          var manualCymbals = manualEl.value
+            .split("\n")
+            .map(function (line) {
+              return line.trim();
+            })
             .filter(Boolean)
-            .map(function (title) { return { title: title, manual: true }; });
+            .map(function (title) {
+              return { title: title, manual: true };
+            });
           payload.cymbals = payload.cymbals.concat(manualCymbals);
         }
 
-
-        payload.gotos = (selected.gotos || []).map(function (p) { return { id: p.id, title: p.title }; });
-        if (files.profilePhoto) payload.profilePhoto = { name: files.profilePhoto.name, dataUrl: await toDataUrl(files.profilePhoto) };
-        if (files.setupPhoto) payload.setupPhoto = { name: files.setupPhoto.name, dataUrl: await toDataUrl(files.setupPhoto) };
+        payload.gotos = (selected.gotos || []).map(function (p) {
+          return { id: p.id, title: p.title };
+        });
+        if (files.profilePhoto)
+          payload.profilePhoto = {
+            name: files.profilePhoto.name,
+            dataUrl: await toDataUrl(files.profilePhoto),
+          };
+        if (files.setupPhoto)
+          payload.setupPhoto = {
+            name: files.setupPhoto.name,
+            dataUrl: await toDataUrl(files.setupPhoto),
+          };
 
         var res = await fetch(proxyUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(payload),
         });
-        var data = await res.json().catch(function () { return {}; });
+        var data = await res.json().catch(function () {
+          return {};
+        });
         if (!res.ok || (data && data.ok === false)) {
-          throw new Error((data && data.error) || ("Server returned " + res.status));
+          throw new Error(
+            (data && data.error) || "Server returned " + res.status,
+          );
         }
 
         if (!openSuccessModal()) {
-          showAlert("success", "Thanks! Your profile was submitted and saved as a draft for review.");
+          showAlert(
+            "success",
+            "Thanks! Your profile was submitted and saved as a draft for review.",
+          );
         }
         form.reset();
         resetAllPickers();
         root.querySelectorAll(".upload-box").forEach(function (b) {
           b.classList.remove("has-file");
-          var ft = b.querySelector(".upload-file"); if (ft) ft.textContent = "";
+          var ft = b.querySelector(".upload-file");
+          if (ft) ft.textContent = "";
         });
         files = {};
         if (counter) counter.textContent = "0 / 400";
