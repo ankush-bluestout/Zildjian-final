@@ -429,7 +429,11 @@
     letter-spacing: 0px;
     color: #666666;
 }
-
+.field-hint {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: #6d7175;
+}
 
 
 
