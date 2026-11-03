@@ -216,14 +216,15 @@
     letter-spacing: 0.84px;
     color: #CC9F53;
 }
-#artist-form-root .field-hint { 
-        font-family: Montserrat;
+#artist-form-root .field-hint {
+    font-family: Montserrat;
     font-weight: 400;
     font-size: 12px;
     line-height: 20 px;
     letter-spacing: 0px;
     color: #666666;
- }
+    margin-top: -7px;
+}
 #artist-form-root .field-input {
     -webkit-appearance: none;
     -moz-appearance: none;
