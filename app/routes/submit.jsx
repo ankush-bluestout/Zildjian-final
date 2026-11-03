@@ -235,6 +235,10 @@ function buildMetafields(d, definitions, setupImageId, profileImageId) {
     ["Video 1", d.video1],
     ["Video 2", d.video2],
     ["Cymbal Setup", cymbalSetup],
+    ["Profile Picture Credit", d.profileCredit],
+    ["Profile Picture Rights", d.profileRights],
+    ["Setup Picture Credit", d.setupCredit],
+    ["Setup Picture Rights", d.setupRights],
   ];
   definitionValues.forEach(([name, value]) => {
     if (!value) return;
@@ -314,11 +318,6 @@ function buildMetafields(d, definitions, setupImageId, profileImageId) {
       });
     }
   }
-  text("profile_credit", d.profileCredit);
-  text("profile_rights", d.profileRights);
-  text("setup_credit", d.setupCredit);
-  text("setup_rights", d.setupRights);
-
   const toGid = (id) =>
     String(id).startsWith("gid://")
       ? String(id)
