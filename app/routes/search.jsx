@@ -165,10 +165,10 @@ export async function loader({ request }) {
   // escape quotes/backslashes so they can't break the query string
   const term = q.replace(/["\\]/g, "\\$&");
 
-  const parts = [];
+  const parts = [`status:active`]; // only active products
   if (hasTerm) parts.push(`title:*${term}*`);
   if (isCymbals) parts.push(`product_type:Cymbals`);
-  const query = parts.join(" AND "); // may be "" (returns everything)
+  const query = parts.join(" AND ");
 
   // page size per fetch (a "chunk" the scroll appends)
   const first = 24;
