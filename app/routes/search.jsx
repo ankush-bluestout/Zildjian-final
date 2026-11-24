@@ -168,6 +168,7 @@ export async function loader({ request }) {
   const parts = [`status:active`]; // only active products
   if (hasTerm) parts.push(`title:*${term}*`);
   if (isCymbals) parts.push(`product_type:Cymbals`);
+  else parts.push(`NOT product_type:Cymbals`); // Go-To's: hide Cymbals-type products
   const query = parts.join(" AND ");
 
   // page size per fetch (a "chunk" the scroll appends)
@@ -180,6 +181,7 @@ export async function loader({ request }) {
          nodes {
            id
            title
+           productType
            featuredImage { url }
            variants(first: 1) { nodes { sku } }
          }
@@ -190,7 +192,10 @@ export async function loader({ request }) {
   );
 
   const conn = (await res.json()).data?.products;
-  const products = (conn?.nodes || []).map((p) => ({
+  const products = (conn?.nodes || [])
+    // safety net: Go-To's never shows Cymbals-type products
+    .filter((p) => isCymbals || (p.productType || "").toLowerCase() !== "cymbals")
+    .map((p) => ({
     id: p.id,
     title: p.title,
     image: p.featuredImage?.url || null,

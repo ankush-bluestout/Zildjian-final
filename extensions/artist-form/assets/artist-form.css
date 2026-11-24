@@ -220,10 +220,13 @@
     font-family: Montserrat;
     font-weight: 400;
     font-size: 12px;
-    line-height: 20 px;
+    line-height: 20px;
     letter-spacing: 0px;
     color: #666666;
     margin-top: -7px;
+}
+.field-hint.products-hint {
+    margin-bottom: 2px;
 }
 #artist-form-root .field-input {
     -webkit-appearance: none;
