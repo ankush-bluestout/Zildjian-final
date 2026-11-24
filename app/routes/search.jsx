@@ -151,6 +151,31 @@ import { authenticate } from "../shopify.server";
 
 const EMPTY = { products: [], pageInfo: { endCursor: null, hasNextPage: false } };
 
+// Go-To's: products from these collections are listed first, then the rest.
+const PRIORITY_HANDLES = ["gear-accessories", "apparel"];
+let priorityIds = null; // cached numeric collection ids
+
+async function getPriorityIds(admin) {
+  if (priorityIds) return priorityIds;
+  const res = await admin.graphql(
+    `#graphql
+     query Cols($query: String!) {
+       collections(first: 10, query: $query) { nodes { id handle } }
+     }`,
+    {
+      variables: {
+        query: PRIORITY_HANDLES.map((h) => `handle:${h}`).join(" OR "),
+      },
+    }
+  );
+  const nodes = (await res.json()).data?.collections?.nodes || [];
+  const ids = nodes
+    .filter((c) => PRIORITY_HANDLES.includes(c.handle))
+    .map((c) => c.id.split("/").pop());
+  if (ids.length) priorityIds = ids; // don't cache failures
+  return ids;
+}
+
 export async function loader({ request }) {
   const { admin } = await authenticate.public.appProxy(request);
   if (!admin) return Response.json(EMPTY);
@@ -158,18 +183,40 @@ export async function loader({ request }) {
   const url = new URL(request.url);
   const q = (url.searchParams.get("q") || "").trim();
   const group = url.searchParams.get("group") || "";
-  const after = url.searchParams.get("after") || null;
+  const afterParam = url.searchParams.get("after") || "";
   const isCymbals = group === "cymbals";
   const hasTerm = q.length >= 2;
 
   // escape quotes/backslashes so they can't break the query string
-  const term = q.replace(/["\\]/g, "\\$&");
+  const term = q.replace(/["\]/g, "\$&");
 
-  const parts = [`status:active`]; // only active products
-  if (hasTerm) parts.push(`title:*${term}*`);
-  if (isCymbals) parts.push(`product_type:Cymbals`);
-  else parts.push(`NOT product_type:Cymbals`); // Go-To's: hide Cymbals-type products
-  const query = parts.join(" AND ");
+  const base = [`status:active`]; // only active products
+  if (hasTerm) base.push(`title:*${term}*`);
+  if (isCymbals) base.push(`product_type:Cymbals`);
+  else base.push(`NOT product_type:Cymbals`); // Go-To's: hide Cymbals-type products
+
+  // Go-To's cursor is "p1:<cursor>" (priority collections) or "p2:<cursor>" (the rest)
+  let phase = 2;
+  let after = null;
+  let query = base.join(" AND ");
+
+  if (!isCymbals) {
+    const ids = await getPriorityIds(admin);
+    if (ids.length) {
+      phase = afterParam.startsWith("p2:") ? 2 : 1;
+      after = afterParam.replace(/^p[12]:/, "") || null;
+      const inAny = "(" + ids.map((i) => `collection_id:${i}`).join(" OR ") + ")";
+      query =
+        base.join(" AND ") +
+        (phase === 1
+          ? ` AND ${inAny}`
+          : ` AND NOT ${inAny}`);
+    } else {
+      after = afterParam.replace(/^p[12]:/, "") || null;
+    }
+  } else {
+    after = afterParam || null;
+  }
 
   // page size per fetch (a "chunk" the scroll appends)
   const first = 24;
@@ -196,17 +243,27 @@ export async function loader({ request }) {
     // safety net: Go-To's never shows Cymbals-type products
     .filter((p) => isCymbals || (p.productType || "").toLowerCase() !== "cymbals")
     .map((p) => ({
-    id: p.id,
-    title: p.title,
-    image: p.featuredImage?.url || null,
-    sku: p.variants?.nodes?.[0]?.sku || null,
-  }));
+      id: p.id,
+      title: p.title,
+      image: p.featuredImage?.url || null,
+      sku: p.variants?.nodes?.[0]?.sku || null,
+    }));
 
-  return Response.json({
-    products,
-    pageInfo: {
-      endCursor: conn?.pageInfo?.endCursor || null,
-      hasNextPage: !!conn?.pageInfo?.hasNextPage,
-    },
-  });
+  let endCursor = conn?.pageInfo?.endCursor || null;
+  let hasNextPage = !!conn?.pageInfo?.hasNextPage;
+
+  if (!isCymbals && priorityIds) {
+    if (phase === 1) {
+      if (hasNextPage) endCursor = "p1:" + endCursor;
+      else {
+        // priority collections exhausted -> continue with everything else
+        endCursor = "p2:";
+        hasNextPage = true;
+      }
+    } else if (endCursor) {
+      endCursor = "p2:" + endCursor;
+    }
+  }
+
+  return Response.json({ products, pageInfo: { endCursor, hasNextPage } });
 }
