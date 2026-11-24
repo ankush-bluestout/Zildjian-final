@@ -188,7 +188,7 @@ export async function loader({ request }) {
   const hasTerm = q.length >= 2;
 
   // escape quotes/backslashes so they can't break the query string
-  const term = q.replace(/["\]/g, "\$&");
+  const term = q.replace(/["\\]/g, "\\$&");
 
   const base = [`status:active`]; // only active products
   if (hasTerm) base.push(`title:*${term}*`);
